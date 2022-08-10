@@ -1,0 +1,22 @@
+extern fun free(voidptr_ void) void
+extern fun free(voidptr_ string) void
+extern fun malloc(size int) voidptr
+extern fun putchar(string_ char) void
+extern fun puts(string_ string) void
+extern fun itoa(value int, buffer string, base int) string
+
+fun print(int_ int) void {
+    let buffer string = malloc(10)
+
+    puts(itoa(int_, buffer, 10))
+
+    free(buffer)
+}
+
+fun print(char_ char) void {
+    putchar(char_)
+}
+
+fun print(string_ string) void {
+    puts(string_)
+}

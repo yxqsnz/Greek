@@ -1,0 +1,19 @@
+import examples.stdio
+
+struct Book {
+    name string
+    author string
+    year int
+}
+
+fun main() int {
+    let alice Book = Book {
+        "Alice no Pais das Maravilhas",
+        "Lewis Carroll",
+        1865
+    }
+
+    examples.stdio.print(alice.name)
+    examples.stdio.print(alice.author)
+    examples.stdio.print(alice.year)
+}
