@@ -1,12 +1,14 @@
 import examples.std
 
+extern fun malloc(size int) voidptr
+
 struct Worker {
     name string
     next voidptr
 }
 
 fun main() int {
-    let worker pointer@Worker = examples.std.malloc(Worker)
+    let worker pointer@Worker = malloc(Worker)
 
     worker.name = "hello"
 
