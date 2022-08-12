@@ -1,4 +1,4 @@
-import examples.stdio
+import examples.std
 
 struct Book {
     name string
@@ -13,7 +13,7 @@ fun main() int {
         1865
     }
 
-    examples.stdio.print(alice.name)
-    examples.stdio.print(alice.author)
-    examples.stdio.print(alice.year)
+    examples.std.print(alice.name)
+    examples.std.print(alice.author)
+    examples.std.print(alice.year)
 }
