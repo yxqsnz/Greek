@@ -97,7 +97,7 @@ def compile_expression(scope: Scope, expression: Expression):
     elif type(expression) is Dot:
         if dot_call := expression.get_call:
             dot_call.name = expression.as_name
-            return f'{_get_dot_bases(dot_call.name.value)[0].replace(".", "__")}_{compile_expression(scope, dot_call)}'
+            return f'{_get_dot_bases(dot_call.name.value)[0].replace(".", "__")}__{compile_expression(scope, dot_call)}'
 
         return expression.as_name.value
 
@@ -178,7 +178,7 @@ def compile_function(scope: Scope, function: Function):
     if scope.name is None:
         return f'{function.return_type.name.value} {function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
     
-    return f'{function.return_type.name.value} {scope.name.value.replace(".", "__")}_{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
+    return f'{function.return_type.name.value} {scope.name.value.replace(".", "__")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
 
 def compile_struct(scope: Scope, struct: StructDeclaration):
     compiled_struct_body = ' '.join(f'{compile_type(scope, kind)} {name.value};' for name, kind in zip(struct.names, struct.kinds))
