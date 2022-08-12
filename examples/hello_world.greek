@@ -17,9 +17,10 @@ fun main() int {
     gustavo.name = "gustavo"
     gustavo.next = 0
 
-    let current voidptr = 0
+    let current pointer@Worker = marcel
 
     while current != 0 {
+        examples.std.print(current.name)
         current = current.next
     }
 }
