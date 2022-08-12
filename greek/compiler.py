@@ -74,7 +74,7 @@ def compile_expression(scope: Scope, expression: Expression):
     if type(expression) is Name:
         if Type(expression) in scope.structs:
             return f'sizeof({expression.value})'
-            
+
         return expression.value
 
     if type(expression) is Struct:
@@ -120,6 +120,9 @@ def compile_expression(scope: Scope, expression: Expression):
 def compile_type(scope: Scope, type_: Type):
     if type_.subtype is None:
         return type_.name.value
+    
+    if type_.name.value == "pointer":
+        return f'{compile_type(scope, type_.subtype)}*'
 
     return f'{type_.name.value}_{compile_type(scope, type_.subtype)}'
 
@@ -128,10 +131,17 @@ def compile_let(scope: Scope, declaration: Let):
 
     if declaration.kind.name.value == "list":
         return f'{compile_type(scope, declaration.kind.subtype)} {declaration.name.value}[] = {compile_expression(scope, declaration.value)}'
-
+    
     return f'{compiled_type} {declaration.name.value} = ({compiled_type}) {compile_expression(scope, declaration.value)}'
 
 def compile_set(scope: Scope, set: Set):
+    def compile_name_or_dot(name: Name | Dot):
+        if name.left in scope.variables:
+            if scope.variables[name.left][0].name.value == "pointer":
+                return compile_expression(scope, name).replace('.', '->')
+        
+        return compile_expression(scope, name)
+
     if type(set) is SetAdd:
         return f'{set.name.value} += {compile_expression(scope, set.value)}'
     elif type(set) is SetSub:
@@ -143,7 +153,7 @@ def compile_set(scope: Scope, set: Set):
     elif type(set) is SetRem:
         return f'{set.name.value} %= {compile_expression(scope, set.value)}'
 
-    return f'{set.name.value} = {compile_expression(scope, set.value)}'
+    return f'{compile_name_or_dot(set.name)} = {compile_expression(scope, set.value)}'
 
 def compile_if(scope: Scope, statement: If):
     return f'if ({compile_expression(scope, statement.condition)}) {compile_body(scope, statement.body)}'

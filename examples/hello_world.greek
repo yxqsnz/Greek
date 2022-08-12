@@ -6,5 +6,7 @@ struct Worker {
 }
 
 fun main() int {
-    let worker Worker = Worker { "hello", 0 }
+    let worker pointer@Worker = examples.std.malloc(Worker)
+
+    worker.name = "hello"
 }

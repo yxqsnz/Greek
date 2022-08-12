@@ -256,7 +256,7 @@ def parse_body(seeker: Control) -> Body:
             lines.append(parse_return(seeker))
         
         else:
-            name = token
+            name = parse_expression(seeker, token)
             token = seeker.take()
 
             if token is Token.Equal:
@@ -300,8 +300,6 @@ def parse_type(seeker: Control, name: Name) -> Type:
         seeker.drop()
     
     return Type(name)
-
-    
 
 def parse_let(seeker: Control, name: Name) -> Let:
     kind = parse_type(seeker, seeker.take())
