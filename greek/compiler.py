@@ -10,6 +10,8 @@ def _get_dot_bases(dotname: str):
 def pythontypes_to_greektypes(type: type):
     return Type({str: Name('string'), int: Name('int'), float: Name('float')}[type])
 
+def type_to_size(struct: StructDeclaration) -> Literal:
+    return Literal(1)
 
 def resolve_call(scope: Scope, call: Call) -> Function:
     def resolve_signature(expression: Expression):
@@ -20,6 +22,12 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             return pythontypes_to_greektypes(type(expression.value))
         
         elif type(expression) is Name:
+            if expression.value not in scope.variables:
+                if Type(name=expression.value) in scope.structs:
+                    return Type(name='int')
+                else:
+                    raise NameError(f"unknown name {expression.value}")
+
             return scope.variables[expression.value][0]
         
         elif type(expression) is Item:
@@ -64,6 +72,9 @@ def compile_call(scope: Scope, call: Call):
 
 def compile_expression(scope: Scope, expression: Expression):
     if type(expression) is Name:
+        if Type(expression) in scope.structs:
+            return f'sizeof({expression.value})'
+            
         return expression.value
 
     if type(expression) is Struct:

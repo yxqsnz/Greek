@@ -1,19 +1,10 @@
 import examples.std
 
-struct Book {
+struct Worker {
     name string
-    author string
-    year int
+    next voidptr
 }
 
 fun main() int {
-    let alice Book = Book {
-        "Alice no Pais das Maravilhas",
-        "Lewis Carroll",
-        1865
-    }
-
-    examples.std.print(alice.name)
-    examples.std.print(alice.author)
-    examples.std.print(alice.year)
+    let worker Worker = Worker { "hello", 0 }
 }
