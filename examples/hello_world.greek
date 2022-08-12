@@ -1,15 +1,8 @@
-struct Worker {
-    name string
-    age int
-}
-
 struct Worker@Banana {
     name string
     age int
 }
 
 fun main() int {
-    let marcel Worker = Worker { "hello", 50 }
-    let gustavo Worker@Banana = Worker@Banana { "world", 50 }
-
+    let worker Worker@Banana = Worker@Banana { "banana" 50 }
 }

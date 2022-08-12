@@ -188,7 +188,11 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
 
     elif token is Token.LeftParenthesis:
         return parse_expression(seeker, parse_call(seeker, value))
-    elif type(value) is Name and token is Token.LeftBrace:
+    elif type(value) is Name and token is Token.At:
+        seeker.drop()
+        return parse_expression(seeker, parse_type(seeker, value))
+    
+    elif type(value) in (Type, Name) and token is Token.LeftBrace:
         return parse_expression(seeker, parse_struct(seeker, value))
     
     elif token is Token.Plus:
