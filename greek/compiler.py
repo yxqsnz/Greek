@@ -140,7 +140,7 @@ def compile_let(scope: Scope, declaration: Let):
     if declaration.kind.name.value == "list":
         return f'{compile_type(scope, declaration.kind.subtype)} {declaration.name.value}[] = {compile_expression(scope, declaration.value)}'
     
-    return f'{compiled_type} {declaration.name.value} = ({compiled_type}) {compile_expression(scope, declaration.value)}'
+    return f'{compiled_type} {declaration.name.value} = {compile_expression(scope, declaration.value)}'
 
 def compile_set(scope: Scope, set: Set):
     if type(set) is SetAdd:
