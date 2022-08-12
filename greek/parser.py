@@ -222,7 +222,7 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
     elif token is Token.Dot:
         return parse_expression(seeker, Dot(value, parse_expression(seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual})), ignore)
     
-    elif token is Token.LeftBracket and type(value) in (Name, Dot):
+    elif type(value) in (Name, Dot) and token is Token.LeftBracket:
         item = Item(value, parse_expression(seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual}))
 
         if (token := seeker.take()) is not Token.RightBracket:
@@ -238,14 +238,14 @@ def parse_if(seeker: Control) -> If:
     return If(parse_expression(seeker, seeker.take()), parse_body(seeker))
 
 def parse_while(seeker: Control) -> While:
-    return While(parse_expression(seeker, seeker.take()), parse_body(seeker))
+    return While(parse_expression(seeker, seeker.take(), {Token.LeftBrace}), parse_body(seeker))
 
 def parse_return(seeker: Control) -> Return:
     return Return(parse_expression(seeker, seeker.take()))
 
 def parse_body(seeker: Control) -> Body:
-    if seeker.take() is not Token.LeftBrace:
-        raise SyntaxError(f"expecting '{{'")
+    if (token := seeker.take()) is not Token.LeftBrace:
+        raise SyntaxError(f"expecting '{{'. found {token}")
     
     lines = []
 

@@ -1,5 +1,16 @@
 import std.io
 
 fun main() int {
-    std.io.print("Hello, World!")
+    let text string = "hello"
+    let i int = 0
+
+    let c char = text[i]
+
+    while c {
+        std.io.print(c)
+
+        i += 1
+        c = text[i]
+        
+    }
 }
