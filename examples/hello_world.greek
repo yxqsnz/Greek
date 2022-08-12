@@ -1,8 +1,5 @@
-struct Worker@Banana {
-    name string
-    age int
-}
+import std.io
 
 fun main() int {
-    let worker Worker@Banana = Worker@Banana { "banana" 50 }
+    std.io.print("Hello, World!")
 }
