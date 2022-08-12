@@ -46,7 +46,11 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         
         elif type(expression) is Dot:
             signature = resolve_signature(expression.left)
-            struct = scope.structs[signature]
+            
+            if signature.name.value == 'pointer':
+                struct = scope.structs[signature.subtype]
+            else:
+                struct = scope.structs[signature]
 
             return struct.kinds[struct.names.index(expression.right)]
 
@@ -109,6 +113,10 @@ def compile_expression(scope: Scope, expression: Expression):
         if dot_call := expression.get_call:
             dot_call.name = expression.as_name
             return f'{_get_dot_bases(dot_call.name.value)[0].replace(".", "__")}__{compile_expression(scope, dot_call)}'
+        
+        if expression.left in scope.variables:
+            if scope.variables[expression.left][0].name.value == "pointer":
+                return expression.as_name.value.replace('.', '->')
 
         return expression.as_name.value
 
@@ -135,13 +143,6 @@ def compile_let(scope: Scope, declaration: Let):
     return f'{compiled_type} {declaration.name.value} = ({compiled_type}) {compile_expression(scope, declaration.value)}'
 
 def compile_set(scope: Scope, set: Set):
-    def compile_name_or_dot(name: Name | Dot):
-        if name.left in scope.variables:
-            if scope.variables[name.left][0].name.value == "pointer":
-                return compile_expression(scope, name).replace('.', '->')
-        
-        return compile_expression(scope, name)
-
     if type(set) is SetAdd:
         return f'{set.name.value} += {compile_expression(scope, set.value)}'
     elif type(set) is SetSub:
@@ -153,7 +154,7 @@ def compile_set(scope: Scope, set: Set):
     elif type(set) is SetRem:
         return f'{set.name.value} %= {compile_expression(scope, set.value)}'
 
-    return f'{compile_name_or_dot(set.name)} = {compile_expression(scope, set.value)}'
+    return f'{compile_expression(scope, set.name)} = {compile_expression(scope, set.value)}'
 
 def compile_if(scope: Scope, statement: If):
     return f'if ({compile_expression(scope, statement.condition)}) {compile_body(scope, statement.body)}'

@@ -9,4 +9,6 @@ fun main() int {
     let worker pointer@Worker = examples.std.malloc(Worker)
 
     worker.name = "hello"
+
+    examples.std.print(worker.name)
 }
