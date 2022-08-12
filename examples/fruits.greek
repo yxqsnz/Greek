@@ -1,0 +1,12 @@
+import examples.std
+
+fun main() int {
+    let fruits list@string = ["apple", "banana", "pear"]
+    let i int = 0
+
+    while i < 3 {
+        examples.std.print(fruits[i])
+
+        i += 1
+    }
+}
