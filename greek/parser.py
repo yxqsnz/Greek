@@ -189,7 +189,7 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
     elif token is Token.LeftParenthesis:
         return parse_expression(seeker, parse_call(seeker, value))
     elif type(value) is Name and token is Token.LeftBrace:
-        return parse_expression(seeker, parse_struct(seeker, parse_type(seeker, value)))
+        return parse_expression(seeker, parse_struct(seeker, value))
     
     elif token is Token.Plus:
         return parse_expression(seeker, Add(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)

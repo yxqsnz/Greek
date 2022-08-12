@@ -1,26 +1,15 @@
-import examples.std
-
-extern fun malloc(size int) voidptr
-
 struct Worker {
     name string
-    next voidptr
+    age int
+}
+
+struct Worker@Banana {
+    name string
+    age int
 }
 
 fun main() int {
-    let marcel pointer@Worker = malloc(Worker)
-    let gustavo pointer@Worker = malloc(Worker)
+    let marcel Worker = Worker { "hello", 50 }
+    let gustavo Worker@Banana = Worker@Banana { "world", 50 }
 
-    marcel.name = "marcel"
-    marcel.next = gustavo
-
-    gustavo.name = "gustavo"
-    gustavo.next = 0
-
-    let current pointer@Worker = marcel
-
-    while current != 0 {
-        examples.std.print(current.name)
-        current = current.next
-    }
 }
