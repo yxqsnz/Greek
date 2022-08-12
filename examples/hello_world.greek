@@ -8,9 +8,18 @@ struct Worker {
 }
 
 fun main() int {
-    let worker pointer@Worker = malloc(Worker)
+    let marcel pointer@Worker = malloc(Worker)
+    let gustavo pointer@Worker = malloc(Worker)
 
-    worker.name = "hello"
+    marcel.name = "marcel"
+    marcel.next = gustavo
 
-    examples.std.print(worker.name)
+    gustavo.name = "gustavo"
+    gustavo.next = 0
+
+    let current voidptr = 0
+
+    while current != 0 {
+        current = current.next
+    }
 }

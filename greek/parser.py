@@ -26,6 +26,7 @@ class Mul(Add): pass
 class Div(Add): pass
 class Rem(Add): pass
 
+class NotEqual(Add): pass
 class Equal(Add): pass
 class LessThan(Add): pass
 class GreaterThan(Add): pass
@@ -201,6 +202,8 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
     elif token is Token.Percent:
         return parse_expression(seeker, Rem(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)
     
+    elif token is Token.NotEqual:
+        return NotEqual(value, parse_expression(seeker, seeker.take()))
     elif token is Token.EqualEqual:
         return Equal(value, parse_expression(seeker, seeker.take()))
     elif token is Token.LessThan:

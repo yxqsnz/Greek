@@ -1,5 +1,5 @@
 from .linter import Scope
-from .parser import Array, Ast, Add, Dot, Item, ExternFunction, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
+from .parser import Array, Ast, Add, Dot, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
 IGNORED_FUNCTIONS = {'malloc', 'free'}
 
@@ -96,6 +96,8 @@ def compile_expression(scope: Scope, expression: Expression):
     elif type(expression) is Rem:
         return f'{compile_expression(scope, expression.left)} % {compile_expression(scope, expression.right)}'
     
+    elif type(expression) is NotEqual:
+        return f'{compile_expression(scope, expression.left)} != {compile_expression(scope, expression.right)}'
     elif type(expression) is Equal:
         return f'{compile_expression(scope, expression.left)} == {compile_expression(scope, expression.right)}'
     elif type(expression) is LessThan:
