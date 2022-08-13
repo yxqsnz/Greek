@@ -106,7 +106,7 @@ def compile_expression(scope: Scope, expression: Expression):
         return expression.value
 
     if type(expression) is Struct:
-        return f'{{{", ".join(compile_expression(scope, field) for field in expression.fields)}}}'
+        return f'({compile_type(scope, expression.kind)} {{{", ".join(compile_expression(scope, field) for field in expression.fields)}}}'
     elif type(expression) is Call:
         return compile_call(scope, expression, True)
     elif type(expression) is Add:
@@ -151,7 +151,10 @@ def compile_expression(scope: Scope, expression: Expression):
 
     return str(expression)
 
-def compile_type(scope: Scope, type_: Type):
+def compile_type(scope: Scope, type_: Type | Name):
+    if type(type_) is Name:
+        return type_.value
+
     if type_.subtype is None:
         return type_.name.value
     
