@@ -116,7 +116,7 @@ def compile_expression(scope: Scope, expression: Expression):
 
     elif type(expression) is Dot:
         if dot_call := expression.get_call:
-            dot_call.name = expression.as_name
+            dot_call = Call(expression.as_name, list(dot_call.arguments))
             return f'{_get_dot_bases(dot_call.name.value)[0].replace(".", "__")}__{compile_call(scope, dot_call)}'
         
         if expression.left in scope.variables:
