@@ -2,6 +2,8 @@ import functools
 from .linter import Scope
 from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
+NEWLINE = '\n'
+
 def _get_dot_bases(dotname: str):
     *basepath, basename = dotname.split('.')
     return '.'.join(basepath), basename
@@ -235,7 +237,13 @@ def compile_function(scope: Scope, function: Function):
 
 def compile_struct(scope: Scope, struct: StructDeclaration):
     compiled_struct_body = ' '.join(f'{compile_type(scope, kind)} {name.value};' for name, kind in zip(struct.names, struct.kinds))
-    return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};'
+    struct_functions = []
+    
+    for signatures in struct.functions.values():
+        for function in signatures.values():
+            struct_functions.append(function)
+
+    return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(scope, function) for function in struct_functions)}'
 
 def compile(scope: Scope, step=0):
     if step == 0:
@@ -249,7 +257,9 @@ def compile(scope: Scope, step=0):
 
         yield '#define string char*'
         yield '#define voidptr void*'
+        yield '#define function void*'
         yield '#define list_string char'
+
 
     for module in scope.modules.values():
         yield from compile(module, step + 1)

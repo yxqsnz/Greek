@@ -105,6 +105,10 @@ class Function:
     parameters: dict[Name, Name]
     body: Body
 
+    @property
+    def signature(self):
+        return tuple(self.parameters.values())
+
 @dataclass
 class If:
     condition: Expression
@@ -125,6 +129,7 @@ class StructDeclaration:
     kind: Type
     names: list[Name]
     kinds: list[Type]
+    functions: dict[Name, dict[tuple[Name], Function]]
 
 @dataclass
 class Struct:
@@ -387,6 +392,7 @@ def parse_struct_declaration(seeker: Control, kind: Type) -> StructDeclaration:
     
     names = []
     kinds = []
+    functions = dict()
 
     for token in seeker:
         if token is Token.RightBrace:
@@ -395,10 +401,19 @@ def parse_struct_declaration(seeker: Control, kind: Type) -> StructDeclaration:
         elif type(token) is Name:
             names.append(token)
             kinds.append(parse_type(seeker, seeker.take()))
+        
+        elif token is Keyword.Fun:
+            function = parse_function(seeker, seeker.take())
+
+            functions.setdefault(function.name, {})
+            functions[function.name][function.signature] = function
+
+            names.append(function.name)
+            kinds.append(Type(Name('function')))
         else:
             raise SyntaxError(f'{token} is not a Name')
 
-    return StructDeclaration(kind, names, kinds)
+    return StructDeclaration(kind, names, kinds, functions)
 
 def parse(seeker: Control):
     for token in seeker:
