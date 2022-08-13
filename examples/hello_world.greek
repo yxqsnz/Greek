@@ -7,7 +7,7 @@ struct Vector {
     items voidptr
     length int
 
-    fun new() Vector {
+    fun new() pointer@Vector {
         let vector pointer@Vector = malloc(Vector)
 
         vector.items = 0

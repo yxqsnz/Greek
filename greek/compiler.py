@@ -1,5 +1,5 @@
 import functools
-from .linter import Scope
+from .linter import Scope, lint_function
 from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
 NEWLINE = '\n'
@@ -225,23 +225,26 @@ def compile_body(scope: Scope, body: Body):
     return f'{INDENT}{{{INDENT1}{compiled_lines}{INDENT}}}'
 
 def compile_function(scope: Scope, function: Function):
+    INDENT = '\n' + ('  ' * scope.indent)
     compiled_parameters = ", ".join(f'{kind.name.value} {parameter.value}' for parameter, kind in function.parameters.items())
     
     if type(function) is ExternFunction:
         return f'// {function.return_type.name.value} {function.name.value}({compiled_parameters});'
 
     if function.name.value == "main":
-        return f'{function.return_type.name.value} {function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
+        return f'{INDENT}{compile_type(scope, function.return_type)} {function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
     
-    return f'{function.return_type.name.value} {scope.name.value.replace(".", "__")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
+    return f'{INDENT}{compile_type(scope, function.return_type)} {scope.name.value.replace(".", "__")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
 
 def compile_struct(scope: Scope, struct: StructDeclaration):
     compiled_struct_body = ' '.join(f'{compile_type(scope, kind)} {name.value};' for name, kind in zip(struct.names, struct.kinds))
     struct_functions = []
+
+    scope = scope.copy()
     
     for signatures in struct.functions.values():
         for function in signatures.values():
-            struct_functions.append(function)
+            struct_functions.append(lint_function(scope, function))
 
     return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(scope, function) for function in struct_functions)}'
 
