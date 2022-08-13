@@ -28,24 +28,24 @@ fun cat(left string, right string) string {
     return buffer
 }
 
-fun startswith(source string, substring string) bool {
-    let source_length int = len(source)
-    let substring_length int = len(substring)
+fun equals(left string, right string) int {
+    let left_length int = len(left)
+    let right_length int = len(right)
 
     let i int = 0
     let s int = 0
 
-    if substring_length > source_length {
+    if right_length != left_length {
         return 0
     }
 
-    while i < source_length {
-        if source[i] == substring[i] {
+    while i < right_length {
+        if right[i] == left[i] {
             s += 1
         }
 
         i += 1
     }
 
-    return s == substring_length
+    return s == right_length
 }

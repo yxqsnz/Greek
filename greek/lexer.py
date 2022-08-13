@@ -109,7 +109,7 @@ def lex_scan_token(seeker: Control) -> Token:
         if seeker.equals(token):
             return token
     
-    raise SyntaxError(f"invalid token '{seeker.take()}'")
+    raise SyntaxError(f"invalid token '{seeker.take()}'. at position {seeker.position}")
 
 def lex_scan_stringliteral(seeker: Control, quote: str) -> Literal:
     value = ''
