@@ -51,14 +51,17 @@ fun equals(left string, right string) int {
 }
 
 fun slice(source string, start int, stop int) string {
-    let destination string = malloc(start + stop + 1)
+    let destination string = malloc((stop - start) + 1)
     let i int = start
     let j int = 0
 
     while i < stop {
         destination[j] = source[i]
+        i += 1
         j += 1
     }
+
+    destination[j] = 0
 
     return destination
 }

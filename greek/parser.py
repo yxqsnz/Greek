@@ -181,10 +181,20 @@ def parse_struct(seeker: Control, kind: Type) -> Struct:
 
     return Struct(kind, fields)
 
+def parse_parenthesized_expression(seeker: Control, value: Expression, ignore=set()):
+    expression = parse_expression(seeker, value, ignore | {Token.RightParenthesis})
+
+    if (token := seeker.take()) is not Token.RightParenthesis:
+        raise SyntaxError(f"expected ')'. found {token}")
+    
+    return expression
+
 def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
     if value is Token.LeftBracket:
         return parse_expression(seeker, parse_array(seeker))
-    
+    elif value is Token.LeftParenthesis:
+        return parse_expression(seeker, parse_parenthesized_expression(seeker, seeker.take(), ignore))
+
     token = seeker.take()
 
     if token in ignore:
