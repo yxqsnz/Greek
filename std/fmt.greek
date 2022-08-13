@@ -28,7 +28,7 @@ fun cat(left string, right string) string {
     return buffer
 }
 
-fun startswith(source string, substring string) int {
+fun startswith(source string, substring string) bool {
     let source_length int = len(source)
     let substring_length int = len(substring)
 

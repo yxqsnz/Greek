@@ -1,5 +1,5 @@
 from .linter import Scope
-from .parser import Array, Ast, Add, Dot, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
+from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
 def _get_dot_bases(dotname: str):
     *basepath, basename = dotname.split('.')
@@ -170,6 +170,9 @@ def compile_set(scope: Scope, set: Set):
 def compile_if(scope: Scope, statement: If):
     return f'if ({compile_expression(scope, statement.condition)}) {compile_body(scope, statement.body)}'
 
+def compile_else(scope: Scope, statement: Else):
+    return f'else {compile_body(scope, statement.body)}'
+
 def compile_while(scope: Scope, loop: While):
     return f'while ({compile_expression(scope, loop.condition)}) {compile_body(scope, loop.body)}'
 
@@ -188,6 +191,8 @@ def compile_body(scope: Scope, body: Body):
         
         elif type(line) is If:
             return compile_if(scope.copy(), line)
+        elif type(line) is Else:
+            return compile_else(scope.copy(), line)
         elif type(line) is While:
             return compile_while(scope.copy(), line)
         elif type(line) is Return:
@@ -218,6 +223,7 @@ def compile(scope: Scope, step=0):
     if step == 0:
         yield '#define _CRT_SECURE_NO_WARNINGS'
         yield '#define _CRT_NONSTDC_NO_DEPRECATE'
+        yield '#include <stdbool.h>'
         yield '#include <malloc.h>'
         yield '#include <memory.h>'
         yield '#include <stdlib.h>'

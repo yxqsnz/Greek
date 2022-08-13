@@ -13,6 +13,15 @@ fun print(int_ int) void {
     free(buffer)
 }
 
+fun print(bool_ bool) void {
+    if bool_ {
+        puts("true")
+    }
+    else {
+        puts("false")
+    }
+}
+
 fun print(char_ char) void {
     putchar(char_)
 }
@@ -20,3 +29,4 @@ fun print(char_ char) void {
 fun print(string_ string) void {
     puts(string_)
 }
+

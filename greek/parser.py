@@ -109,8 +109,12 @@ class Function:
 class If:
     condition: Expression
     body: Body
-
+    
 class While(If): pass
+
+@dataclass
+class Else:
+    body: Body
 
 @dataclass
 class Array:
@@ -234,6 +238,9 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
 
     return value
 
+def parse_else(seeker: Control) -> Else:
+    return Else(parse_body(seeker))
+
 def parse_if(seeker: Control) -> If:
     return If(parse_expression(seeker, seeker.take(), {Token.LeftBrace}), parse_body(seeker))
 
@@ -257,6 +264,8 @@ def parse_body(seeker: Control) -> Body:
             lines.append(parse_let(seeker, seeker.take()))
         elif token is Keyword.If:
             lines.append(parse_if(seeker))
+        elif token is Keyword.Else:
+            lines.append(parse_else(seeker))
         elif token is Keyword.While:
             lines.append(parse_while(seeker))
         elif token is Keyword.Return:

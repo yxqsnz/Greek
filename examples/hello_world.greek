@@ -3,6 +3,6 @@ import std.fmt
 
 
 fun main() int {
-    std.io.print(std.fmt.startswith("hello", "he"))
+    std.io.print(std.fmt.startswith("hello", "hel"))
 
 }
