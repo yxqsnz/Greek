@@ -207,17 +207,17 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
         return parse_expression(seeker, Rem(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)
     
     elif token is Token.NotEqual:
-        return NotEqual(value, parse_expression(seeker, seeker.take()))
+        return NotEqual(value, parse_expression(seeker, seeker.take(), ignore=ignore))
     elif token is Token.EqualEqual:
-        return Equal(value, parse_expression(seeker, seeker.take()))
+        return Equal(value, parse_expression(seeker, seeker.take(), ignore=ignore))
     elif token is Token.LessThan:
-        return LessThan(value, parse_expression(seeker, seeker.take()))
+        return LessThan(value, parse_expression(seeker, seeker.take(), ignore=ignore))
     elif token is Token.GreaterThan:
-        return GreaterThan(value, parse_expression(seeker, seeker.take()))
+        return GreaterThan(value, parse_expression(seeker, seeker.take(), ignore=ignore))
     elif token is Token.LessThanEqual:
-        return LessThanEqual(value, parse_expression(seeker, seeker.take()))
+        return LessThanEqual(value, parse_expression(seeker, seeker.take(), ignore=ignore))
     elif token is Token.GreaterThanEqual:
-        return GreaterThanEqual(value, parse_expression(seeker, seeker.take()))
+        return GreaterThanEqual(value, parse_expression(seeker, seeker.take(), ignore=ignore))
     
     elif token is Token.Dot:
         return parse_expression(seeker, Dot(value, parse_expression(seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual})), ignore)
@@ -235,7 +235,7 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
     return value
 
 def parse_if(seeker: Control) -> If:
-    return If(parse_expression(seeker, seeker.take()), parse_body(seeker))
+    return If(parse_expression(seeker, seeker.take(), {Token.LeftBrace}), parse_body(seeker))
 
 def parse_while(seeker: Control) -> While:
     return While(parse_expression(seeker, seeker.take(), {Token.LeftBrace}), parse_body(seeker))

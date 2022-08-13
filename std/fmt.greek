@@ -1,5 +1,6 @@
 extern fun malloc(size int) voidptr
 extern fun memcpy(dest string, src string, count int) voidptr
+extern fun free(buffer string) void
 
 fun len(string_ string) int {
     let i int = 0
@@ -25,4 +26,26 @@ fun cat(left string, right string) string {
     buffer[total_length] = 0
 
     return buffer
+}
+
+fun startswith(source string, substring string) int {
+    let source_length int = len(source)
+    let substring_length int = len(substring)
+
+    let i int = 0
+    let s int = 0
+
+    if substring_length > source_length {
+        return 0
+    }
+
+    while i < source_length {
+        if source[i] == substring[i] {
+            s += 1
+        }
+
+        i += 1
+    }
+
+    return s == substring_length
 }
