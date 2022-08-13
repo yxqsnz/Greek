@@ -1,11 +1,8 @@
 import std.io
 import std.fmt
 
-fun add() int {
-    return 50
-}
 
 fun main() int {
-    std.io.print(add())
+    std.io.print(std.fmt.cat("he", "llo"))
 
 }
