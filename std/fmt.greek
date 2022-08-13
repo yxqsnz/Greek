@@ -51,6 +51,10 @@ fun equals(left string, right string) int {
 }
 
 fun slice(source string, start int, stop int) string {
+    if start > stop {
+        return slice(source, stop, start)
+    }
+
     let destination string = malloc((stop - start) + 1)
     let i int = start
     let j int = 0
