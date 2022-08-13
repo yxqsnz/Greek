@@ -1,8 +1,6 @@
 from .linter import Scope
 from .parser import Array, Ast, Add, Dot, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
-IGNORED_FUNCTIONS = {'malloc', 'free'}
-
 def _get_dot_bases(dotname: str):
     *basepath, basename = dotname.split('.')
     return '.'.join(basepath), basename
@@ -68,7 +66,12 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         module_path, function_name = _get_dot_bases(call.name.value)
         function = scope.modules[module_path].functions[function_name][call_signature]
     else:
-        function = scope.functions[call.name.value][call_signature]
+        function = scope.functions[call.name.value]
+        
+        if call_signature in function:
+            function = function[call_signature]
+        else:
+            raise ValueError(f"can't find function {call.name} with signature {call_signature}")
     
     return function
 
@@ -200,12 +203,9 @@ def compile_function(scope: Scope, function: Function):
     compiled_parameters = ", ".join(f'{kind.name.value} {parameter.value}' for parameter, kind in function.parameters.items())
     
     if type(function) is ExternFunction:
-        if function.name.value in IGNORED_FUNCTIONS:
-            return f'// {function.return_type.name.value} {function.name.value}({compiled_parameters});'
+        return f'// {function.return_type.name.value} {function.name.value}({compiled_parameters});'
 
-        return f'{function.return_type.name.value} {function.name.value}({compiled_parameters});'
-
-    if scope.name is None:
+    if function.name.value == "main":
         return f'{function.return_type.name.value} {function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
     
     return f'{function.return_type.name.value} {scope.name.value.replace(".", "__")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
@@ -216,8 +216,13 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
 
 def compile(scope: Scope, step=0):
     if step == 0:
+        yield '#define _CRT_SECURE_NO_WARNINGS'
+        yield '#define _CRT_NONSTDC_NO_DEPRECATE'
         yield '#include <malloc.h>'
         yield '#include <memory.h>'
+        yield '#include <stdlib.h>'
+        yield '#include <stdio.h>'
+
         yield '#define string char*'
         yield '#define voidptr void*'
         yield '#define list_string char'

@@ -1,3 +1,6 @@
+extern fun malloc(size int) voidptr
+extern fun memcpy(dest string, src string, count int) voidptr
+
 fun len(string_ string) int {
     let i int = 0
     let c char = string_[i]
@@ -8,4 +11,18 @@ fun len(string_ string) int {
     }
 
     return i
+}
+
+fun cat(left string, right string) string {
+    let left_length int = len(left)
+    let right_length int = len(right)
+    let total_length int = left_length + right_length
+    let buffer string = malloc(total_length + 1)
+
+    memcpy(buffer, left, left_length)
+    memcpy(buffer + left_length, right, right_length)
+
+    buffer[total_length] = 0
+
+    return buffer
 }
