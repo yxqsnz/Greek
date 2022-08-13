@@ -56,7 +56,7 @@ fun slice(source string, start int, stop int) string {
     let j int = 0
 
     while i < stop {
-        destination[j] = string[i]
+        destination[j] = source[i]
         j += 1
     }
 
