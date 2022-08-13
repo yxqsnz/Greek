@@ -15,7 +15,7 @@ class Scope:
     name: Name=None
 
     def copy(self):
-        return type(self)(self.variables, self.functions, self.modules, self.structs, self.indent + 1, self.name)
+        return type(self)(dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1, self.name)
 
 def lint_body(scope: Scope, body: Body):
     for line in body.lines:
@@ -51,5 +51,5 @@ def lint(asts: Ast, name: Name=None):
             scope.functions[ast.name][tuple(ast.parameters.values())] = ast
         elif type(ast) is StructDeclaration:
             scope.structs[ast.kind] = ast
-            
+
     return scope

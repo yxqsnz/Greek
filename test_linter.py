@@ -9,4 +9,4 @@ tokens = list(lexer.lex(Control(open('examples/hello_world.greek').read())))
 asts = list(parser.parse(Control(tokens)))
 scope = linter.lint(asts)
 
-print(pprint(scope))
+print(repr(scope))

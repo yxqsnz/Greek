@@ -1,0 +1,11 @@
+fun len(string_ string) int {
+    let i int = 0
+    let c char = string_[i]
+
+    while c {
+        i += 1
+        c = string_[i]
+    }
+
+    return i
+}

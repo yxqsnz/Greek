@@ -1,16 +1,9 @@
 import std.io
+import std.fmt
 
 fun main() int {
-    let text string = "hello"
-    let i int = 0
+    std.io.print(
+        std.fmt.len("hello")
+    )
 
-    let c char = text[i]
-
-    while c {
-        std.io.print(c)
-
-        i += 1
-        c = text[i]
-        
-    }
 }

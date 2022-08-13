@@ -24,7 +24,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         elif type(expression) is Name:
             if expression.value not in scope.variables:
                 if Type(name=expression.value) in scope.structs:
-                    return Type(name='int')
+                    return Type(Name('int'))
                 else:
                     raise NameError(f"unknown name {expression.value}")
 
@@ -45,6 +45,9 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             raise NotImplementedError(f"can't translate type {signature}")
         
         elif type(expression) is Dot:
+            if dot_call := expression.get_call:
+                return resolve_call(scope, Call(expression.as_name, list(dot_call.arguments))).return_type
+
             signature = resolve_signature(expression.left)
             
             if signature.name.value == 'pointer':
@@ -58,7 +61,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             return resolve_signature(expression.left)
         
         return Type(Name('void'))
-
+    
     call_signature = tuple(resolve_signature(argument) for argument in call.arguments)
     
     if '.' in call.name.value:
@@ -114,7 +117,7 @@ def compile_expression(scope: Scope, expression: Expression):
     elif type(expression) is Dot:
         if dot_call := expression.get_call:
             dot_call.name = expression.as_name
-            return f'{_get_dot_bases(dot_call.name.value)[0].replace(".", "__")}__{compile_expression(scope, dot_call)}'
+            return f'{_get_dot_bases(dot_call.name.value)[0].replace(".", "__")}__{compile_call(scope, dot_call)}'
         
         if expression.left in scope.variables:
             if scope.variables[expression.left][0].name.value == "pointer":
