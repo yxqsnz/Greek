@@ -7,15 +7,16 @@ from .parser import parse
 
 @dataclass
 class Scope:
+    name: Name
     variables: dict[Name, tuple[Name, Expression]]
     functions: dict[Name, dict[tuple[Name], Function]]
     modules: dict[Name, "Scope"]
     structs: dict[Type, StructDeclaration]
     indent: int=0
-    name: Name=None
+    
 
     def copy(self):
-        return type(self)(dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1, self.name)
+        return type(self)(self.name, dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1)
 
 def lint_body(scope: Scope, body: Body):
     for line in body.lines:
@@ -35,10 +36,10 @@ def lint_module(path: Expression):
     tokens = list(lex(Control(open(path.value.replace('.', '/') + '.greek').read())))
     asts = list(parse(Control(tokens)))
     
-    return lint(asts, name=path)
+    return lint(asts, path)
 
-def lint(asts: Ast, name: Name=None):
-    scope = Scope(dict(), dict(), dict(), dict(), name=name)
+def lint(asts: Ast, name: Name):
+    scope = Scope(name, dict(), dict(), dict(), dict())
 
     for ast in asts:
         if type(ast) is Import:
