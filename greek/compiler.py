@@ -72,8 +72,11 @@ def resolve_call(scope: Scope, call: Call) -> Function:
     
     return function
 
-def compile_call(scope: Scope, call: Call):
+def compile_call(scope: Scope, call: Call, direct=False):
     function = resolve_call(scope, call)
+
+    if direct and type(function) is not ExternFunction:
+        return f'{scope.name.value.replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
 
     return f'{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
 
@@ -87,7 +90,7 @@ def compile_expression(scope: Scope, expression: Expression):
     if type(expression) is Struct:
         return f'{{{", ".join(compile_expression(scope, field) for field in expression.fields)}}}'
     elif type(expression) is Call:
-        return compile_call(scope, expression)
+        return compile_call(scope, expression, True)
     elif type(expression) is Add:
         return f'{compile_expression(scope, expression.left)} + {compile_expression(scope, expression.right)}'
     elif type(expression) is Sub:
