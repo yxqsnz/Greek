@@ -1,3 +1,4 @@
+import functools
 from .linter import Scope
 from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
@@ -64,14 +65,23 @@ def resolve_call(scope: Scope, call: Call) -> Function:
     
     if '.' in call.name.value:
         module_path, function_name = _get_dot_bases(call.name.value)
-        function = scope.modules[module_path].functions[function_name][call_signature]
-    else:
-        function = scope.functions[call.name.value]
+        function = scope.modules[module_path]
         
+        if function_name in function.functions:
+            function = function.functions[function_name][call_signature]
+        else:
+            raise NameError(f"there is no function named '{function_name}' in module '{module_path}'")
+    else:
+        function_name = call.name.value
+        function = scope.functions[function_name]
+        
+        if function_name not in scope.functions:
+            raise NameError(f"there is no function named '{function_name}'")
+
         if call_signature in function:
             function = function[call_signature]
         else:
-            raise ValueError(f"can't find function {call.name} with signature {call_signature}")
+            raise ValueError(f"can't find a function named '{function_name}' with signature {call_signature}")
     
     return function
 

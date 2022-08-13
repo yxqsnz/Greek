@@ -3,6 +3,8 @@ import std.fmt
 
 
 fun main() int {
-    std.io.print(std.fmt.startswith("hello", "hel"))
+    if std.fmt.startswith("hello", "hel") {
+        std.io.print("trueeee")
+    }
 
 }

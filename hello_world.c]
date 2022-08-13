@@ -1,0 +1,93 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NONSTDC_NO_DEPRECATE
+#include <stdbool.h>
+#include <malloc.h>
+#include <memory.h>
+#include <stdlib.h>
+#include <stdio.h>
+#define string char*
+#define voidptr void*
+#define list_string char
+// void free(void voidptr_);
+// void free(string voidptr_);
+// voidptr malloc(int size);
+// void putchar(char string_);
+// void puts(string string_);
+// string itoa(int value, string buffer, int base);
+void std__io__print_int(int int_)
+{
+  string buffer = malloc(10);
+  puts(itoa(int_, buffer, 10));
+  free(buffer);
+}
+void std__io__print_bool(bool bool_)
+{
+  if (bool_) 
+  {
+    puts("true");
+  }
+  else 
+  {
+    puts("false");
+  }
+}
+void std__io__print_char(char char_)
+{
+  putchar(char_);
+}
+void std__io__print_string(string string_)
+{
+  puts(string_);
+}
+// voidptr malloc(int size);
+// voidptr memcpy(string dest, string src, int count);
+// void free(string buffer);
+int std__fmt__len(string string_)
+{
+  int i = 0;
+  char c = string_[i];
+  while (c) 
+  {
+    i += 1;
+    c = string_[i];
+  }
+  return i;
+}
+string std__fmt__cat(string left, string right)
+{
+  int left_length = std__fmt__len(left);
+  int right_length = std__fmt__len(right);
+  int total_length = left_length + right_length;
+  string buffer = malloc(total_length + 1);
+  memcpy(buffer, left, left_length);
+  memcpy(buffer + left_length, right, right_length);
+  buffer[total_length] = 0;
+  return buffer;
+}
+bool std__fmt__startswith(string source, string substring)
+{
+  int source_length = std__fmt__len(source);
+  int substring_length = std__fmt__len(substring);
+  int i = 0;
+  int s = 0;
+  if (substring_length > source_length) 
+  {
+    return 0;
+  }
+  while (i < source_length) 
+  {
+    if (source[i] == substring[i]) 
+    {
+      s += 1;
+    }
+    i += 1;
+  }
+  return s == substring_length;
+}
+int main()
+{
+  if (std__fmt__startswith("hello", "hel")) 
+  {
+    std__io__print_string("trueeee");
+  }
+}
