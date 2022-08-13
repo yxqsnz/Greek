@@ -78,9 +78,12 @@ class Name(BaseToken):
 class Literal(BaseToken):
     def __init__(self, value: str | int | float | bool):
         self.value = value
-        
+    
     def __repr__(self):
         return f'Literal({self.value})'
+
+    def __bool__(self):
+        return True
 
 class Comment(BaseToken):
     def __init__(self, value: str | int | float | bool):

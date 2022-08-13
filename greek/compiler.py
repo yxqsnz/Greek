@@ -68,7 +68,12 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         function = scope.modules[module_path]
         
         if function_name in function.functions:
-            function = function.functions[function_name][call_signature]
+            function = function.functions[function_name]
+            
+            if call_signature in function:
+                function = function[call_signature]
+            else:
+                raise NameError(f"there is no function named '{function_name}' in module '{module_path}' with signature {call_signature}'")
         else:
             raise NameError(f"there is no function named '{function_name}' in module '{module_path}'")
     else:

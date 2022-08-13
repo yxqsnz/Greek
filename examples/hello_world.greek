@@ -3,8 +3,6 @@ import std.fmt
 
 
 fun main() int {
-    if std.fmt.equals("hello", "hello") {
-        std.io.print("trueeee")
-    }
+    std.io.print(std.fmt.slice("hello, world", 0, 3))
 
 }

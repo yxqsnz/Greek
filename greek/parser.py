@@ -142,7 +142,7 @@ def parse_call(seeker: Control, name: Name) -> Call:
         elif token is Token.Comma:
             continue
         else:
-            expression = parse_expression(seeker, token)
+            expression = parse_expression(seeker, token, {Token.Comma, Token.RightParenthesis})
 
             if expression:
                 arguments.append(expression)
