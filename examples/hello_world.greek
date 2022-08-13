@@ -1,9 +1,11 @@
 import std.io
 import std.fmt
 
+fun add() int {
+    return 50
+}
+
 fun main() int {
-    std.io.print(
-        std.fmt.len("hello")
-    )
+    std.io.print(add())
 
 }

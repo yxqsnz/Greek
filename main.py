@@ -1,18 +1,12 @@
 from argparse import ArgumentParser
-from dataclasses import replace
 from os import path
 
-from greek.control import Control
-from greek import lexer
-from greek import parser
 from greek import linter
 from greek import compiler
 
 
 def compile(file: str, output: str=None):
-    tokens = list(lexer.lex(Control(open(file).read())))
-    asts = list(parser.parse(Control(tokens)))
-    scope = linter.lint(asts)
+    scope = linter.lint_module(compiler.Name(path.splitext(file)[0].replace('/', '.')))
 
     if output is None:
         for compiled in compiler.compile(scope):
