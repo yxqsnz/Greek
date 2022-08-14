@@ -1,4 +1,3 @@
-import functools
 from .linter import Scope, lint_function
 from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
@@ -67,7 +66,12 @@ def resolve_call(scope: Scope, call: Call) -> Function:
     
     if '.' in call.name.value:
         module_path, function_name = _get_dot_bases(call.name.value)
-        function = scope.modules[module_path]
+        
+        if module_path in scope.variables:
+            print(scope.modules.keys())
+            function = scope.modules[f"{scope.name.value}.{scope.variables[module_path][1].kind.value}"]
+        else:
+            function = scope.modules[module_path]
         
         if function_name in function.functions:
             function = function.functions[function_name]
@@ -265,7 +269,8 @@ def compile(scope: Scope, step=0):
 
 
     for module in scope.modules.values():
-        yield from compile(module, step + 1)
+        if type(module) is Scope:
+            yield from compile(module, step + 1)
 
     for struct in scope.structs.values():
         yield compile_struct(scope, struct)

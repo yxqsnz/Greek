@@ -38,6 +38,18 @@ def lint_module(path: Expression):
     
     return lint(asts, path)
 
+def lint_struct_declaration(scope: Scope, struct_declaration: StructDeclaration):
+    struct_scope = scope.copy()
+
+    for signatures in struct_declaration.functions.values():
+        for function in signatures.values():
+            struct_scope.functions.setdefault(function.name, {})
+            struct_scope.functions[function.name][tuple(function.parameters.values())] = lint_function(struct_scope, function)
+    
+    scope.modules[f'{scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
+
+    return struct_declaration
+
 def lint(asts: Ast, name: Name):
     scope = Scope(name, dict(), dict(), dict(), dict())
 
@@ -54,6 +66,6 @@ def lint(asts: Ast, name: Name):
             if ast.kind in scope.structs:
                 raise NameError(f"type struct '{ast.kind.name}' already declared in module '{scope.name.value}'")
 
-            scope.structs[ast.kind] = ast
+            scope.structs[ast.kind] = lint_struct_declaration(scope, ast)
 
     return scope

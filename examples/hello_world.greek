@@ -1,23 +1,21 @@
-extern fun malloc(size: int) voidptr
-
 import std.io
 import std.fmt
 
-struct Vector {
-    items:  voidptr
-    length: int
+struct Book {
+    title: str
+    author: str
 
-    fun new() pointer@Vector {
-        let vector: pointer@Vector = malloc(Vector)
-
-        vector.items = 0
-        vector.length = 0
-
-        return vector
+    fun print(self: Book) void {
+        std.io.print(self.title)
+        std.io.print(self.author)
     }
 }
 
 fun main() int {
-    std.io.print(std.fmt.slice("hello, world", 0, 3))
+    let book: Book = Book {
+        "Alice No Pais Das Maravilhas",
+        "Lewis Carroll"
+    }
 
+    book.print()
 }
