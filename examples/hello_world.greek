@@ -5,7 +5,7 @@ struct Vector {}
 struct Vector {}
 
 fun main() int {
-    let message: string = "hello, world"
+    let message: str = "hello, world"
 
     std.io.print(std.fmt.slice(message, 0, 3))
 }

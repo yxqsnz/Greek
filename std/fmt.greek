@@ -1,8 +1,8 @@
 extern fun malloc(size: int) voidptr
-extern fun memcpy(dest: string, src: string, count: int) voidptr
-extern fun free(buffer: string) void
+extern fun memcpy(dest: str, src: str, count: int) voidptr
+extern fun free(buffer: str) void
 
-fun len(source: string) int {
+fun len(source: str) int {
     let i: int = 0
     let c: char = source[i]
 
@@ -14,12 +14,12 @@ fun len(source: string) int {
     return i
 }
 
-fun cat(left: string, right: string) string {
+fun cat(left: str, right: str) str {
     let left_length:  int = len(left)
     let right_length: int = len(right)
     let total_length: int = left_length + right_length
     
-    let buffer: string = malloc(total_length + 1)
+    let buffer: str = malloc(total_length + 1)
 
     memcpy(buffer, left, left_length)
     memcpy(buffer + left_length, right, right_length)
@@ -29,7 +29,7 @@ fun cat(left: string, right: string) string {
     return buffer
 }
 
-fun equals(left: string, right: string) int {
+fun equals(left: str, right: str) int {
     let left_length:  int = len(left)
     let right_length: int = len(right)
 
@@ -51,12 +51,12 @@ fun equals(left: string, right: string) int {
     return s == right_length
 }
 
-fun slice(source: string, start: int, stop: int) string {
+fun slice(source: str, start: int, stop: int) str {
     if start > stop {
         return slice(source, stop, start)
     }
 
-    let destination: string = malloc((stop - start) + 1)
+    let destination: str = malloc((stop - start) + 1)
     let i: int = start
     let j: int = 0
 

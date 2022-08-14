@@ -1,7 +1,7 @@
 import std.io
 
 fun main() int {
-    let fruits: list@string = ["apple", "banana", "pear"]
+    let fruits: list@str = ["apple", "banana", "pear"]
     let i: int = 0
 
     while i < 3 {

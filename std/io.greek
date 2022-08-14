@@ -1,5 +1,5 @@
 extern fun putchar(string_: char) void
-extern fun puts(string_: string) void
+extern fun puts(string_: str) void
 
 fun print(bool_: bool) void {
     if bool_ {
@@ -14,7 +14,7 @@ fun print(char_: char) void {
     putchar(char_)
 }
 
-fun print(string_: string) void {
+fun print(string_: str) void {
     puts(string_)
 }
 

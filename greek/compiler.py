@@ -9,7 +9,7 @@ def _get_dot_bases(dotname: str):
     return '.'.join(basepath), basename
 
 def pythontypes_to_greektypes(type: type):
-    return Type({str: Name('string'), int: Name('int'), float: Name('float')}[type])
+    return Type({str: Name('str'), int: Name('int'), float: Name('float')}[type])
 
 def type_to_size(struct: StructDeclaration) -> Literal:
     return Literal(1)
@@ -34,7 +34,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         elif type(expression) is Item:
             signature = resolve_signature(expression.left)
 
-            if signature.name.value == 'string':
+            if signature.name.value == 'str':
                 return Type(Name('char'))
             
             elif signature.name.value == 'list':
@@ -258,7 +258,7 @@ def compile(scope: Scope, step=0):
         yield '#include <stdlib.h>'
         yield '#include <stdio.h>'
 
-        yield '#define string char*'
+        yield '#define str char*'
         yield '#define voidptr void*'
         yield '#define function void*'
         yield '#define list_string char'
