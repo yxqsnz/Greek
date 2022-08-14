@@ -1,5 +1,10 @@
 extern fun puts(string_: string) void
 
+struct Book {
+    author: string
+    name: string
+}
+
 fun main() int {
     let message: string = "hello, world"
 
