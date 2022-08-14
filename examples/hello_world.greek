@@ -1,4 +1,4 @@
-extern fun malloc(size int) voidptr
+extern fun malloc(size: int) voidptr
 
 import std.io
 import std.fmt
