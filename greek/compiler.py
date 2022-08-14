@@ -106,8 +106,15 @@ def compile_call(scope: Scope, call: Call, direct=False):
 
     if direct and type(function) is not ExternFunction:
         return f'{scope.name.value.replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
+    
+    if direct and type(function) is not ExternFunction and function.owner is not None:
+        return f'{function.owner.kind.as_name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
+    
+    if type(function) is not ExternFunction and function.owner is not None:
+        compiled_expressions = (call.name.value.replace("." + function.name.value, "").replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
+        return f'{function.owner.kind.as_name.value}__{function.name.value}({", ".join(compiled_expressions)})'
 
-    return f'{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
+    return f'{_get_dot_bases(call.name.value)[0].replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
 
 def compile_expression(scope: Scope, expression: Expression):
     if type(expression) is Name:
@@ -149,7 +156,7 @@ def compile_expression(scope: Scope, expression: Expression):
     elif type(expression) is Dot:
         if dot_call := expression.get_call:
             dot_call = Call(expression.as_name, list(dot_call.arguments))
-            return f'{_get_dot_bases(dot_call.name.value)[0].replace(".", "__")}__{compile_call(scope, dot_call)}'
+            return f'{compile_call(scope, dot_call)}'
         
         if expression.left in scope.variables:
             if scope.variables[expression.left][0].name.value == "pointer":
@@ -243,6 +250,9 @@ def compile_function(scope: Scope, function: Function):
     if function.name.value == "main":
         return f'{INDENT}{compile_type(scope, function.return_type)} {function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
     
+    if function.owner is not None:
+        return f'{INDENT}{compile_type(scope, function.return_type)} {function.owner.kind.as_name.value.replace("@", "_")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
+
     return f'{INDENT}{compile_type(scope, function.return_type)} {scope.name.value.replace(".", "__")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
 
 def compile_struct(scope: Scope, struct: StructDeclaration):

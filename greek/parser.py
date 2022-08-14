@@ -10,6 +10,16 @@ class Type:
 
     def __hash__(self):
         return hash(self.name)
+    
+    @property
+    def as_name(self) -> Name:
+        if self.subtype is None:
+            return self.name
+            
+        if type(self.subtype) is Type:
+            return Name(f'{self.name.value}@{self.subtype.as_name.value}')
+        
+        return Name(f'{self.name.value}@{self.subtype.value}')
 
 @dataclass
 class Call:
@@ -104,6 +114,7 @@ class Function:
     return_type: Name
     parameters: dict[Name, Name]
     body: Body
+    owner=None
 
     @property
     def signature(self):

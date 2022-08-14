@@ -45,6 +45,7 @@ def lint_struct_declaration(scope: Scope, struct_declaration: StructDeclaration)
         for function in signatures.values():
             struct_scope.functions.setdefault(function.name, {})
             struct_scope.functions[function.name][tuple(function.parameters.values())] = lint_function(struct_scope, function)
+            function.owner = struct_declaration
     
     scope.modules[f'{scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
 
