@@ -51,6 +51,9 @@ def lint(asts: Ast, name: Name):
             scope.functions.setdefault(ast.name, {})
             scope.functions[ast.name][tuple(ast.parameters.values())] = ast
         elif type(ast) is StructDeclaration:
+            if ast.kind in scope.structs:
+                raise NameError(f"type struct '{ast.kind.name}' already declared in module '{scope.name.value}'")
+
             scope.structs[ast.kind] = ast
 
     return scope

@@ -1,6 +1,9 @@
 import std.fmt
 import std.io
 
+struct Vector {}
+struct Vector {}
+
 fun main() int {
     let message: string = "hello, world"
 
