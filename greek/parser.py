@@ -412,7 +412,7 @@ def parse_struct_declaration(seeker: Control, kind: Type) -> StructDeclaration:
             names.append(token)
 
             if (took := seeker.take()) is not Token.Colon:
-                raise SyntaxError(f"expecting ':' after struct parameter {token}. found {took}")
+                raise SyntaxError(f"expecting ':' after struct member {token}. found {took}")
             
             kinds.append(parse_type(seeker, seeker.take()))
         
