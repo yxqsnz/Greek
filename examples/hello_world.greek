@@ -1,23 +1,5 @@
-extern fun malloc(size int) voidptr
-
-import std.io
-import std.fmt
-
-struct Vector {
-    items voidptr
-    length int
-
-    fun new() pointer@Vector {
-        let vector pointer@Vector = malloc(Vector)
-
-        vector.items = 0
-        vector.length = 0
-
-        return vector
-    }
-}
+extern fun puts(string_: string) void
 
 fun main() int {
-    std.io.print(std.fmt.slice("hello, world", 0, 3))
-
+    puts("hello, world")
 }

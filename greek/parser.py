@@ -377,8 +377,8 @@ def parse_function(seeker: Control, name: Name) -> Function:
             continue
         
         if type(token) is Name:
-            return_type = parse_type(seeker, seeker.take())
-            parameters[token] = return_type
+            parameter_type = parse_type(seeker, seeker.take())
+            parameters[token] = parameter_type
         else:
             raise SyntaxError(f"expecting ',' or ')'. at {name} head")
     
