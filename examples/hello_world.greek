@@ -1,9 +1,8 @@
-extern fun puts(string_: string) void
-
 import std.fmt
+import std.io
 
 fun main() int {
     let message: string = "hello, world"
 
-    puts(std.fmt.slice(message, 0, 3))
+    std.io.print(std.fmt.slice(message, 0, 3))
 }
