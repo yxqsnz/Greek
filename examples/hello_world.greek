@@ -1,12 +1,9 @@
 extern fun puts(string_: string) void
 
-struct Book {
-    author: string
-    name: string
-}
+import std.fmt
 
 fun main() int {
     let message: string = "hello, world"
 
-    puts(message)
+    puts(std.fmt.slice(message, 0, 3))
 }
