@@ -314,7 +314,7 @@ def parse_body(seeker: Control) -> Body:
 
 def parse_type(seeker: Control, name: Name) -> Type:
     if type(name) is not Name:
-        raise SyntaxError(f"expecting Name after variable declaration. found {name}")
+        raise SyntaxError(f"expecting Name. found {name}")
     
     token = seeker.take()
 

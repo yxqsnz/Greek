@@ -14,10 +14,10 @@ class Control:
         return
     
     def take(self, piece_length=1):
-        if piece_length > 1:
-            piece = self.iterable[self.position: self.position + piece_length]
-        elif self.position >= len(self.iterable):
+        if self.position >= len(self.iterable):
             piece = self.iterable[-1]
+        elif piece_length > 1:
+            piece = self.iterable[self.position: self.position + piece_length]
         else:
             piece = self.iterable[self.position]
         
@@ -34,7 +34,7 @@ class Control:
         return self.drop(iterable_length)
     
     def drop(self, piece_length=1):
-        if self.position < len(self.iterable):
+        if self.position <= len(self.iterable):
             self.position -= piece_length
         
         return
