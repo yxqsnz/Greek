@@ -114,6 +114,9 @@ def compile_call(scope: Scope, call: Call, direct=False):
         compiled_expressions = (call.name.value.replace("." + function.name.value, "").replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
         return f'{function.owner.kind.as_name.value}__{function.name.value}({", ".join(compiled_expressions)})'
 
+    if direct:
+        return f'{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
+    
     return f'{_get_dot_bases(call.name.value)[0].replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
 
 def compile_expression(scope: Scope, expression: Expression):
