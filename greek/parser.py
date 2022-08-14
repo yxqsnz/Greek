@@ -385,7 +385,7 @@ def parse_function(seeker: Control, name: Name) -> Function:
         
         if type(token) is Name:
             if (took := seeker.take()) is not Token.Colon:
-                raise SyntaxError(f"expecting ':' after function parameter {parameter_type}. found {took}")
+                raise SyntaxError(f"expecting ':' after function parameter {token}. found {took}")
 
             parameter_type = parse_type(seeker, seeker.take())
             parameters[token] = parameter_type            
