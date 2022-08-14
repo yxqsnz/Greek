@@ -353,7 +353,11 @@ def parse_extern_function(seeker: Control, name: Name) -> Function:
             continue
         
         if type(token) is Name:
-            parameters[token] = parse_type(seeker, seeker.take())
+            if (took := seeker.take()) is not Token.Colon:
+                raise SyntaxError(f"expecting ':' after function parameter {parameter_type}. found {took}")
+
+            parameter_type = parse_type(seeker, seeker.take())
+            parameters[token] = parameter_type
         else:
             raise SyntaxError(f"expecting ',' or ')'. at {name} head")
     
@@ -377,8 +381,11 @@ def parse_function(seeker: Control, name: Name) -> Function:
             continue
         
         if type(token) is Name:
+            if (took := seeker.take()) is not Token.Colon:
+                raise SyntaxError(f"expecting ':' after function parameter {parameter_type}. found {took}")
+
             parameter_type = parse_type(seeker, seeker.take())
-            parameters[token] = parameter_type
+            parameters[token] = parameter_type            
         else:
             raise SyntaxError(f"expecting ',' or ')'. at {name} head")
     
