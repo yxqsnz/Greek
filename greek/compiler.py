@@ -68,7 +68,6 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         module_path, function_name = _get_dot_bases(call.name.value)
         
         if module_path in scope.variables:
-            print(scope.modules.keys())
             function = scope.modules[f"{scope.name.value}.{scope.variables[module_path][1].kind.value}"]
         else:
             function = scope.modules[module_path]
