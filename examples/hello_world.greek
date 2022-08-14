@@ -1,5 +1,7 @@
 extern fun puts(string_: string) void
 
 fun main() int {
-    puts("hello, world")
+    let message: string = "hello, world"
+
+    puts(message)
 }

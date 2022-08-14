@@ -333,6 +333,9 @@ def parse_type(seeker: Control, name: Name) -> Type:
     return Type(name)
 
 def parse_let(seeker: Control, name: Name) -> Let:
+    if (took := seeker.take()) is not Token.Colon:
+        raise SyntaxError(f"expecting ':' after let {name}. found {took}")
+    
     kind = parse_type(seeker, seeker.take())
 
     if (token := seeker.take()) is not Token.Equal:
