@@ -1,8 +1,8 @@
 import std.io
 
 fun main() int {
-    let fruits list@string = ["apple", "banana", "pear"]
-    let i int = 0
+    let fruits: list@string = ["apple", "banana", "pear"]
+    let i: int = 0
 
     while i < 3 {
         std.io.print(fruits[i])
