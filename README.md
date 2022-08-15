@@ -4,6 +4,12 @@ Greek is a minimalistic compiled programming language. intended to be easy to le
 
 ![Logo](logo_labeled.png)
 
+## Install
+```
+$ cd Greek
+$ pip install .
+```
+
 ## FEATURES
 - [X] Function overloading
 - [ ] Operator overloading
