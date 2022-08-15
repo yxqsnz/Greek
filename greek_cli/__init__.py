@@ -7,15 +7,16 @@ from greek import compiler
 
 def compile(file: str, output: str=None):
     scope = checker.check_module(compiler.Name(path.splitext(file)[0].replace('/', '.')))
+    compilation = compiler.Compilation.new()
 
     if output is None:
-        for compiled in compiler.compile(scope):
+        for compiled in compiler.compile(compilation, scope):
             print(compiled)
     
     else:
         stream = open(output, 'w')
 
-        for compiled in compiler.compile(scope):
+        for compiled in compiler.compile(compilation, scope):
             stream.write(compiled)
             stream.write('\n')
     

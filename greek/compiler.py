@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from .checker import Scope, check_function
 from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
@@ -278,7 +279,16 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
 
     return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(scope, function) for function in struct_functions)}'
 
-def compile(scope: Scope, step=0):
+@dataclass
+class Compilation:
+    compiled_functions: set[Name]
+    compiled_modules: set[Name]
+
+    @classmethod
+    def new(cls):
+        return cls(set(), set())
+
+def compile(compilation: Compilation, scope: Scope, step=0):
     if step == 0:
         yield '#define _CRT_SECURE_NO_WARNINGS'
         yield '#define _CRT_NONSTDC_NO_DEPRECATE'
@@ -298,8 +308,9 @@ def compile(scope: Scope, step=0):
         yield f'#define {name.value} {compile_expression(scope, value[1])}'
 
     for module in scope.modules.values():
-        if type(module) is Scope:
-            yield from compile(module, step + 1)
+        if type(module) is Scope and module.name not in compilation.compiled_modules:
+            compilation.compiled_modules |= {module.name}
+            yield from compile(compilation, module, step + 1)
 
     for struct in scope.structs.values():
         yield compile_struct(scope, struct)
