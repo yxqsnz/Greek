@@ -1,4 +1,4 @@
-from .checker import Scope, lint_function
+from .checker import Scope, check_function
 from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
 NEWLINE = '\n'
@@ -266,7 +266,7 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
     
     for signatures in struct.functions.values():
         for function in signatures.values():
-            struct_functions.append(lint_function(scope, function))
+            struct_functions.append(check_function(scope, function))
 
     return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(scope, function) for function in struct_functions)}'
 

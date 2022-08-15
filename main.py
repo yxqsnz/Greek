@@ -6,7 +6,7 @@ from greek import compiler
 
 
 def compile(file: str, output: str=None):
-    scope = checker.lint_module(compiler.Name(path.splitext(file)[0].replace('/', '.')))
+    scope = checker.check_module(compiler.Name(path.splitext(file)[0].replace('/', '.')))
 
     if output is None:
         for compiled in compiler.compile(scope):
