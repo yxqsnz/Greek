@@ -149,7 +149,11 @@ class Struct:
 
 Ast = Function | Let | Body | Add | Call
 
-def parse_call(seeker: Control, name: Name) -> Call:
+@dataclass
+class Parsing:
+    line: int=1
+
+def parse_call(parsing: Parsing, seeker: Control, name: Name) -> Call:
     arguments = []
 
     for token in seeker:
@@ -158,14 +162,14 @@ def parse_call(seeker: Control, name: Name) -> Call:
         elif token is Token.Comma:
             continue
         else:
-            expression = parse_expression(seeker, token, {Token.Comma, Token.RightParenthesis})
+            expression = parse_expression(parsing, seeker, token, {Token.Comma, Token.RightParenthesis})
 
             if expression:
                 arguments.append(expression)
 
     return Call(name, arguments)
 
-def parse_array(seeker: Control) -> Array:
+def parse_array(parsing: Parsing, seeker: Control) -> Array:
     items = []
 
     for token in seeker:
@@ -174,14 +178,14 @@ def parse_array(seeker: Control) -> Array:
         elif token is Token.Comma:
             continue
 
-        expression = parse_expression(seeker, token, {Token.Comma})
+        expression = parse_expression(parsing, seeker, token, {Token.Comma})
 
         if expression is not None:
             items.append(expression)
 
     return Array(items)
 
-def parse_struct(seeker: Control, kind: Type) -> Struct:
+def parse_struct(parsing: Parsing, seeker: Control, kind: Type) -> Struct:
     fields = []
 
     for token in seeker:
@@ -190,26 +194,26 @@ def parse_struct(seeker: Control, kind: Type) -> Struct:
         elif token is Token.Comma:
             continue
 
-        expression = parse_expression(seeker, token)
+        expression = parse_expression(parsing, seeker, token)
 
         if expression is not None:
             fields.append(expression)
 
     return Struct(kind, fields)
 
-def parse_parenthesized_expression(seeker: Control, value: Expression, ignore=set()):
-    expression = parse_expression(seeker, value, ignore | {Token.RightParenthesis})
+def parse_parenthesized_expression(parsing: Parsing, seeker: Control, value: Expression, ignore=set()):
+    expression = parse_expression(parsing, seeker, value, ignore | {Token.RightParenthesis})
 
     if (token := seeker.take()) is not Token.RightParenthesis:
         raise SyntaxError(f"expected ')'. found {token}")
     
     return expression
 
-def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
+def parse_expression(parsing: Parsing, seeker: Control, value: Expression, ignore=set()) -> Name:
     if value is Token.LeftBracket:
-        return parse_expression(seeker, parse_array(seeker))
+        return parse_expression(parsing, seeker, parse_array(seeker))
     elif value is Token.LeftParenthesis:
-        return parse_expression(seeker, parse_parenthesized_expression(seeker, seeker.take(), ignore))
+        return parse_expression(parsing, seeker, parse_parenthesized_expression(parsing, seeker, seeker.take(), ignore))
 
     token = seeker.take()
 
@@ -217,66 +221,66 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
         pass
 
     elif token is Token.LeftParenthesis:
-        return parse_expression(seeker, parse_call(seeker, value))
+        return parse_expression(parsing, seeker, parse_call(parsing, seeker, value))
     elif type(value) is Name and token is Token.At:
         seeker.drop()
-        return parse_expression(seeker, parse_type(seeker, value))
+        return parse_expression(parsing, seeker, parse_type(parsing, seeker, value))
     
     elif type(value) in (Type, Name) and token is Token.LeftBrace:
-        return parse_expression(seeker, parse_struct(seeker, value))
+        return parse_expression(parsing, seeker, parse_struct(parsing, seeker, value))
     
     elif token is Token.Plus:
-        return parse_expression(seeker, Add(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)
+        return parse_expression(parsing, seeker, Add(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
     elif token is Token.Minus:
-        return parse_expression(seeker, Sub(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)
+        return parse_expression(parsing, seeker, Sub(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
     elif token is Token.Star:
-        return parse_expression(seeker, Mul(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)
+        return parse_expression(parsing, seeker, Mul(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
     elif token is Token.Slash:
-        return parse_expression(seeker, Div(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)
+        return parse_expression(parsing, seeker, Div(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
     elif token is Token.Percent:
-        return parse_expression(seeker, Rem(value, parse_expression(seeker, seeker.take(), {Token.EqualEqual})), ignore)
+        return parse_expression(parsing, seeker, Rem(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
     
     elif token is Token.NotEqual:
-        return NotEqual(value, parse_expression(seeker, seeker.take(), ignore=ignore))
+        return NotEqual(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
     elif token is Token.EqualEqual:
-        return Equal(value, parse_expression(seeker, seeker.take(), ignore=ignore))
+        return Equal(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
     elif token is Token.LessThan:
-        return LessThan(value, parse_expression(seeker, seeker.take(), ignore=ignore))
+        return LessThan(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
     elif token is Token.GreaterThan:
-        return GreaterThan(value, parse_expression(seeker, seeker.take(), ignore=ignore))
+        return GreaterThan(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
     elif token is Token.LessThanEqual:
-        return LessThanEqual(value, parse_expression(seeker, seeker.take(), ignore=ignore))
+        return LessThanEqual(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
     elif token is Token.GreaterThanEqual:
-        return GreaterThanEqual(value, parse_expression(seeker, seeker.take(), ignore=ignore))
+        return GreaterThanEqual(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
     
     elif token is Token.Dot:
-        return parse_expression(seeker, Dot(value, parse_expression(seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual})), ignore)
+        return parse_expression(parsing, seeker, Dot(value, parse_expression(parsing, seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual})), ignore)
     
     elif type(value) in (Name, Dot) and token is Token.LeftBracket:
-        item = Item(value, parse_expression(seeker, seeker.take(), ignore=ignore))
+        item = Item(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
 
         if (token := seeker.take()) is not Token.RightBracket:
             raise SyntaxError(f"expected ']'. found {token}")
 
-        return parse_expression(seeker, item, ignore)
+        return parse_expression(parsing, seeker, item, ignore)
 
     seeker.drop()
 
     return value
 
-def parse_else(seeker: Control) -> Else:
-    return Else(parse_body(seeker))
+def parse_else(parsing: Parsing, seeker: Control) -> Else:
+    return Else(parse_body(parsing, seeker))
 
-def parse_if(seeker: Control) -> If:
-    return If(parse_expression(seeker, seeker.take(), {Token.LeftBrace}), parse_body(seeker))
+def parse_if(parsing: Parsing, seeker: Control) -> If:
+    return If(parse_expression(parsing, seeker, seeker.take(), {Token.LeftBrace}), parse_body(parsing, seeker))
 
-def parse_while(seeker: Control) -> While:
-    return While(parse_expression(seeker, seeker.take(), {Token.LeftBrace}), parse_body(seeker))
+def parse_while(parsing: Parsing, seeker: Control) -> While:
+    return While(parse_expression(parsing, seeker, seeker.take(), {Token.LeftBrace}), parse_body(parsing, seeker))
 
-def parse_return(seeker: Control) -> Return:
-    return Return(parse_expression(seeker, seeker.take()))
+def parse_return(parsing: Parsing, seeker: Control) -> Return:
+    return Return(parse_expression(parsing, seeker, seeker.take()))
 
-def parse_body(seeker: Control) -> Body:
+def parse_body(parsing: Parsing, seeker: Control) -> Body:
     if (token := seeker.take()) is not Token.LeftBrace:
         raise SyntaxError(f"expecting '{{'. found {token}")
     
@@ -289,43 +293,43 @@ def parse_body(seeker: Control) -> Body:
             continue
 
         elif token is Keyword.Let:
-            lines.append(parse_let(seeker, seeker.take()))
+            lines.append(parse_let(parsing, seeker, seeker.take()))
         elif token is Keyword.If:
-            lines.append(parse_if(seeker))
+            lines.append(parse_if(parsing, seeker))
         elif token is Keyword.Else:
-            lines.append(parse_else(seeker))
+            lines.append(parse_else(parsing, seeker))
         elif token is Keyword.While:
-            lines.append(parse_while(seeker))
+            lines.append(parse_while(parsing, seeker))
         elif token is Keyword.Return:
-            lines.append(parse_return(seeker))
+            lines.append(parse_return(parsing, seeker))
         
         else:
-            name = parse_expression(seeker, token)
+            name = parse_expression(parsing, seeker, token)
             token = seeker.take()
 
             if token is Token.Equal:
-                lines.append(Set(name, parse_expression(seeker, seeker.take())))
+                lines.append(Set(name, parse_expression(parsing, seeker, seeker.take())))
             elif token is Token.PlusEqual:
-                lines.append(SetAdd(name, parse_expression(seeker, seeker.take())))
+                lines.append(SetAdd(name, parse_expression(parsing, seeker, seeker.take())))
             elif token is Token.MinusEqual:
-                lines.append(SetSub(name, parse_expression(seeker, seeker.take())))
+                lines.append(SetSub(name, parse_expression(parsing, seeker, seeker.take())))
             elif token is Token.StarEqual:
-                lines.append(SetMul(name, parse_expression(seeker, seeker.take())))
+                lines.append(SetMul(name, parse_expression(parsing, seeker, seeker.take())))
             elif token is Token.SlashEqual:
-                lines.append(SetDiv(name, parse_expression(seeker, seeker.take())))
+                lines.append(SetDiv(name, parse_expression(parsing, seeker, seeker.take())))
             elif token is Token.PercentEqual:
-                lines.append(SetRem(name, parse_expression(seeker, seeker.take())))
+                lines.append(SetRem(name, parse_expression(parsing, seeker, seeker.take())))
             else:
                 seeker.drop()
 
-                expression = parse_expression(seeker, name)
+                expression = parse_expression(parsing, seeker, name)
 
                 if expression:
                     lines.append(expression)
     
     return Body(lines)
 
-def parse_type(seeker: Control, name: Name) -> Type:
+def parse_type(parsing: Parsing, seeker: Control, name: Name) -> Type:
     if type(name) is not Name:
         raise SyntaxError(f"expecting Name, found {name}. at {name.line}")
     
@@ -335,7 +339,7 @@ def parse_type(seeker: Control, name: Name) -> Type:
         subname = seeker.take()
 
         if type(subname) is Name:
-            subtype = parse_type(seeker, subname)
+            subtype = parse_type(parsing, seeker, subname)
         else:
             raise SyntaxError
 
@@ -345,18 +349,18 @@ def parse_type(seeker: Control, name: Name) -> Type:
     
     return Type(name)
 
-def parse_let(seeker: Control, name: Name) -> Let:
+def parse_let(parsing: Parsing, seeker: Control, name: Name) -> Let:
     if (took := seeker.take()) is not Token.Colon:
         raise SyntaxError(f"expecting ':' after let {name}. found {took}")
     
-    kind = parse_type(seeker, seeker.take())
+    kind = parse_type(parsing, seeker, seeker.take())
 
     if (token := seeker.take()) is not Token.Equal:
         raise SyntaxError(f"expecting '=' found {token}. at {name} variable declaration")
 
-    return Let(name, kind, parse_expression(seeker, seeker.take()))
+    return Let(name, kind, parse_expression(parsing, seeker, seeker.take()))
 
-def parse_extern_function(seeker: Control, name: Name) -> Function:
+def parse_extern_function(parsing: Parsing, seeker: Control, name: Name) -> Function:
     if seeker.take() is not Token.LeftParenthesis:
         raise SyntaxError(f"expecting '('. at function {name} head")
     
@@ -372,19 +376,19 @@ def parse_extern_function(seeker: Control, name: Name) -> Function:
             if (took := seeker.take()) is not Token.Colon:
                 raise SyntaxError(f"expecting ':' after function parameter {token}. found {took}")
 
-            parameter_type = parse_type(seeker, seeker.take())
+            parameter_type = parse_type(parsing, seeker, seeker.take())
             parameters[token] = parameter_type
         else:
             raise SyntaxError(f"expecting ',' or ')'. at {name} head")
     
-    return_type = parse_type(seeker, seeker.take())
+    return_type = parse_type(parsing, seeker, seeker.take())
 
     return ExternFunction(name, parameters, return_type)
 
-def parse_import(seeker: Control) -> Import:
-    return Import(parse_expression(seeker, seeker.take()))
+def parse_import(parsing: Parsing, seeker: Control) -> Import:
+    return Import(parse_expression(parsing, seeker, seeker.take()))
 
-def parse_function(seeker: Control, name: Name) -> Function:
+def parse_function(parsing: Parsing, seeker: Control, name: Name) -> Function:
     if seeker.take() is not Token.LeftParenthesis:
         raise SyntaxError(f"expecting '('. at function {name} head")
     
@@ -400,16 +404,16 @@ def parse_function(seeker: Control, name: Name) -> Function:
             if (took := seeker.take()) is not Token.Colon:
                 raise SyntaxError(f"expecting ':' after function parameter {token}. found {took}")
 
-            parameter_type = parse_type(seeker, seeker.take())
+            parameter_type = parse_type(parsing, seeker, seeker.take())
             parameters[token] = parameter_type            
         else:
             raise SyntaxError(f"expecting ',' or ')'. at {name} head")
     
-    return_type = parse_type(seeker, seeker.take())
+    return_type = parse_type(parsing, seeker, seeker.take())
 
     return Function(name, return_type, parameters, parse_body(seeker))
 
-def parse_struct_declaration(seeker: Control, kind: Type) -> StructDeclaration:
+def parse_struct_declaration(parsing: Parsing, seeker: Control, kind: Type) -> StructDeclaration:
     if seeker.take() is not Token.LeftBrace:
         raise SyntaxError
     
@@ -430,10 +434,10 @@ def parse_struct_declaration(seeker: Control, kind: Type) -> StructDeclaration:
             if (took := seeker.take()) is not Token.Colon:
                 raise SyntaxError(f"expecting ':' after struct member {token}. found {took}")
             
-            kinds.append(parse_type(seeker, seeker.take()))
+            kinds.append(parse_type(parsing, seeker, seeker.take()))
         
         elif token is Keyword.Fun:
-            function = parse_function(seeker, seeker.take())
+            function = parse_function(parsing, seeker, seeker.take())
 
             functions.setdefault(function.name, {})
             functions[function.name][function.signature] = function
@@ -446,6 +450,8 @@ def parse_struct_declaration(seeker: Control, kind: Type) -> StructDeclaration:
     return StructDeclaration(kind, names, kinds, functions)
 
 def parse(seeker: Control):
+    parsing = Parsing()
+
     for token in seeker:
         if token is Token.EndOfFile:
             break
@@ -453,21 +459,21 @@ def parse(seeker: Control):
             continue
 
         if token is Keyword.Import:
-            yield parse_import(seeker)
+            yield parse_import(parsing, seeker)
         elif token is Keyword.Fun:
-            yield parse_function(seeker, seeker.take())
+            yield parse_function(parsing, seeker, seeker.take())
         
         elif token is Keyword.Extern:
             if seeker.take() is Keyword.Fun:
-                yield parse_extern_function(seeker, seeker.take())
+                yield parse_extern_function(parsing, seeker, seeker.take())
             else:
                 raise NotImplementedError("'extern' without 'fun' is not implemented")
         
         elif token is Keyword.Struct:
-            yield parse_struct_declaration(seeker, parse_type(seeker, seeker.take()))
+            yield parse_struct_declaration(parsing, seeker, parse_type(parsing, seeker, seeker.take()))
         
         elif token is Keyword.Let:
-            yield parse_let(seeker, seeker.take())
+            yield parse_let(parsing, seeker, seeker.take())
 
         elif type(token) is Comment:
             yield token
