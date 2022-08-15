@@ -170,11 +170,13 @@ def lex_scan_numericliteral(lexing: Lexing, seeker: Control, value: str) -> Lite
             else:
                 break
         
-        seeker.drop()
+        if char:
+            seeker.drop()
         
         return Literal(float(value), line=lexing.line)
     
-    seeker.drop()
+    if char:
+        seeker.drop()
 
     return Literal(int(value), line=lexing.line)
 
@@ -182,12 +184,17 @@ def lex(seeker: Control):
     lexing = Lexing()
 
     for char in seeker:
+        if char == '':
+            break
+
         if char == ' ' or char == '\t':
             continue
         elif char == '\n':
             lexing.line += 1
             yield Token.Line
+            continue
         
+
         if char == '#':
             yield lex_scan_comment(lexing, seeker)
 

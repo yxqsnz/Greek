@@ -151,7 +151,7 @@ Ast = Function | Let | Body | Add | Call
 
 @dataclass
 class Parsing:
-    line: int=1
+    line: int=0
 
 def parse_call(parsing: Parsing, seeker: Control, name: Name) -> Call:
     arguments = []
@@ -290,9 +290,10 @@ def parse_body(parsing: Parsing, seeker: Control) -> Body:
         if token is Token.RightBrace:
             break
         elif token is Token.Line:
+            parsing.line += 1
             continue
 
-        elif token is Keyword.Let:
+        if token is Keyword.Let:
             lines.append(parse_let(parsing, seeker, seeker.take()))
         elif token is Keyword.If:
             lines.append(parse_if(parsing, seeker))
@@ -331,7 +332,7 @@ def parse_body(parsing: Parsing, seeker: Control) -> Body:
 
 def parse_type(parsing: Parsing, seeker: Control, name: Name) -> Type:
     if type(name) is not Name:
-        raise SyntaxError(f"expecting Name, found {name}. at {name.line}")
+        raise SyntaxError(f"expecting Name, found {name}. at line {parsing.line}")
     
     token = seeker.take()
 
@@ -351,7 +352,7 @@ def parse_type(parsing: Parsing, seeker: Control, name: Name) -> Type:
 
 def parse_let(parsing: Parsing, seeker: Control, name: Name) -> Let:
     if (took := seeker.take()) is not Token.Colon:
-        raise SyntaxError(f"expecting ':' after let {name}. found {took}")
+        raise SyntaxError(f"expecting ':' after let {name}, found {took}. at line {parsing.line}")
     
     kind = parse_type(parsing, seeker, seeker.take())
 
@@ -423,6 +424,7 @@ def parse_struct_declaration(parsing: Parsing, seeker: Control, kind: Type) -> S
 
     for token in seeker:
         if token is Token.Line:
+            parsing.line += 1
             continue
 
         if token is Token.RightBrace:
@@ -456,6 +458,7 @@ def parse(seeker: Control):
         if token is Token.EndOfFile:
             break
         elif token is Token.Line:
+            parsing.line += 1
             continue
 
         if token is Keyword.Import:
@@ -467,7 +470,7 @@ def parse(seeker: Control):
             if seeker.take() is Keyword.Fun:
                 yield parse_extern_function(parsing, seeker, seeker.take())
             else:
-                raise NotImplementedError("'extern' without 'fun' is not implemented")
+                raise NotImplementedError(f"'extern' without 'fun' is not implemented. at line {parsing.line}")
         
         elif token is Keyword.Struct:
             yield parse_struct_declaration(parsing, seeker, parse_type(parsing, seeker, seeker.take()))
