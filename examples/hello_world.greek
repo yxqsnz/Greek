@@ -5,8 +5,9 @@ struct Book {
     title: str
     author: str
 
-    fun print() void {
-        std.io.print("hello")
+    fun print(self: Book) void {
+        std.io.print(self.title)
+        std.io.print(self.author)
     }
 }
 
@@ -16,5 +17,5 @@ fun main() int {
         "Lewis Carroll"
     }
 
-    Book.print()
+    book.print()
 }
