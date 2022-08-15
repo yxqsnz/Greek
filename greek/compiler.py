@@ -115,7 +115,7 @@ def compile_call(scope: Scope, call: Call, direct=False):
         call_module, _ = _get_dot_bases(call.name.value)
         
         if Name("self") in function.parameters and Type(Name(call_module)) not in scope.structs:
-            compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
+            compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments[1:]))
         else:
             compiled_expressions = tuple(compile_expression(scope, argument) for argument in call.arguments)
 
