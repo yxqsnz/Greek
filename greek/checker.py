@@ -8,6 +8,7 @@ from .parser import parse
 @dataclass
 class Scope:
     name: Name
+    constants: dict[Name, tuple[Name, Expression]]
     variables: dict[Name, tuple[Name, Expression]]
     functions: dict[Name, dict[tuple[Name], Function]]
     modules: dict[Name, "Scope"]
@@ -16,7 +17,7 @@ class Scope:
     
 
     def copy(self):
-        return type(self)(self.name, dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1)
+        return type(self)(self.name, dict(self.constants), dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1)
 
 def check_body(scope: Scope, body: Body):
     for line in body.lines:
@@ -52,7 +53,7 @@ def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration
     return struct_declaration
 
 def check(asts: Ast, name: Name):
-    scope = Scope(name, dict(), dict(), dict(), dict())
+    scope = Scope(name, dict(), dict(), dict(), dict(), dict())
 
     for ast in asts:
         if type(ast) is Import:
@@ -68,5 +69,7 @@ def check(asts: Ast, name: Name):
                 raise NameError(f"type struct '{ast.kind.name}' already declared in module '{scope.name.value}'")
 
             scope.structs[ast.kind] = check_struct_declaration(scope, ast)
+        elif type(ast) is Let:
+            scope.constants[ast.name] = ast
 
     return scope
