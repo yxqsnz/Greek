@@ -193,6 +193,9 @@ def parse_struct(parsing: Parsing, seeker: Control, kind: Type) -> Struct:
             break
         elif token is Token.Comma:
             continue
+        elif token is Token.Line:
+            parsing.line += 1
+            continue
 
         expression = parse_expression(parsing, seeker, token)
 
@@ -254,7 +257,7 @@ def parse_expression(parsing: Parsing, seeker: Control, value: Expression, ignor
         return GreaterThanEqual(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
     
     elif token is Token.Dot:
-        return parse_expression(parsing, seeker, Dot(value, parse_expression(parsing, seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual})), ignore)
+        return parse_expression(parsing, seeker, Dot(value, parse_expression(parsing, seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual, Token.LeftParenthesis})), ignore)
     
     elif type(value) in (Name, Dot) and token is Token.LeftBracket:
         item = Item(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
