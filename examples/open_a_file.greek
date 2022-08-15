@@ -1,0 +1,15 @@
+import std.fs
+import std.io
+
+fun main() int {
+    let file: File = std.fs.open("a.txt", "w+")
+    let isClosed: bool = file.closed()
+    if isClosed {
+        let data: str = file.read()
+        std.io.print(data)
+    } else {
+        std.io.print("Failed to open the file!")
+    }
+
+    return 0
+}

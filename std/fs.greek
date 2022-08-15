@@ -1,0 +1,19 @@
+extern fun fopen(path: str, mode: str) pointer@void
+
+struct File {
+    inner: pointer@void
+
+    fun closed(self: File) bool {
+        if self.inner == 0 {
+            return true
+        } else {
+            return false
+        }
+    }
+}
+
+fun open(path: str, mode: str) File {
+    let file: File = File { 0, 0 }
+    file.inner = fopen(path, mode)
+    return file
+}
