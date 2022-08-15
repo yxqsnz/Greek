@@ -55,6 +55,7 @@ TOKENS = sorted(Token.__members__.values(), key=len, reverse=True)
 
 class Keyword(BaseToken, Enum):
     Import=             'import'
+    From=               'from'
     Extern=             'extern'
     Struct=             'struct'
     Enum=               'enum'
@@ -144,7 +145,7 @@ def lex_scan_comment(seeker: Control) -> Comment:
 
 def lex_scan_numericliteral(seeker: Control, value: str) -> Literal:
     char = ''
-    
+
     for char in seeker:
         if char == '_' or char >= '0' and char <= '9':
             value += char
