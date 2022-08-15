@@ -1,6 +1,12 @@
 extern fun putchar(string_: char) void
 extern fun puts(string_: str) void
 
+import std.fmt
+
+fun print(int_: int) void {
+    puts(std.fmt.to_decimal(int_))
+}
+
 fun print(bool_: bool) void {
     if bool_ {
         puts("true")
