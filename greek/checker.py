@@ -15,9 +15,18 @@ class Scope:
     structs: dict[Type, StructDeclaration]
     indent: int=0
     
-
     def copy(self):
         return type(self)(self.name, dict(self.constants), dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1)
+    
+    @property
+    def types(self):
+        types_ = dict(self.structs)
+        
+        for module in self.modules.values():
+            if type(module) is Scope:
+                types_ |= module.types
+        
+        return types_
 
 def check_body(scope: Scope, body: Body):
     for line in body.lines:
