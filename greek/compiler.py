@@ -117,7 +117,7 @@ def compile_call(scope: Scope, call: Call, direct=False):
         call_module, _ = _get_dot_bases(call.name.value)
         
         if Name("self") in function.parameters and Type(Name(call_module)) not in scope.structs:
-            compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments[1:]))
+            compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
         else:
             compiled_expressions = tuple(compile_expression(scope, argument) for argument in call.arguments)
 
@@ -261,7 +261,7 @@ def compile_function(scope: Scope, function: Function):
 
     if function.name.value == "main":
         return f'{INDENT}{compile_type(scope, function.return_type)} {function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
-    
+
     if function.owner is not None:
         return f'{INDENT}{compile_type(scope, function.return_type)} {function.owner.kind.as_name.value.replace("@", "_")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
 
@@ -274,7 +274,10 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
     scope = scope.copy()
     
     for signatures in struct.functions.values():
-        for function in signatures.values():
+        for signature, function in signatures.items():
+            if len(signatures) > 1:
+                function.name = Name(f'{function.name.value.replace("_", "__")}_{"_".join(kind.name.value for kind in signature)}')
+            
             struct_functions.append(check_function(scope, function))
 
     return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(scope, function) for function in struct_functions)}'
