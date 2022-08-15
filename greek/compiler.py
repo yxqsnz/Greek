@@ -10,9 +10,6 @@ def _get_dot_bases(dotname: str):
 def pythontypes_to_greektypes(type: type):
     return Type({str: Name('str'), int: Name('int'), float: Name('float')}[type])
 
-def type_to_size(struct: StructDeclaration) -> Literal:
-    return Literal(1)
-
 def resolve_call(scope: Scope, call: Call) -> Function:
     def resolve_signature(expression: Expression):
         if type(expression) is Call:
