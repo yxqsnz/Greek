@@ -42,11 +42,11 @@ def check_function(scope: Scope, function: Function):
     function.body = check_body(scope, function.body)
     return function
 
-def check_module(path: Expression):
+def check_module(path: Expression, checked_modules=set()):
     tokens = list(lex(Control(open(path.value.replace('.', '/') + '.greek').read())))
     asts = list(parse(Control(tokens)))
     
-    return check(asts, path)
+    return check(asts, path, checked_modules)
 
 def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration):
     struct_scope = scope.copy()
@@ -61,13 +61,17 @@ def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration
 
     return struct_declaration
 
-def check(asts: Ast, name: Name):
+def check(asts: Ast, name: Name, checked_modules=set()):
     scope = Scope(name, dict(), dict(), dict(), dict(), dict())
 
     for ast in asts:
         if type(ast) is Import:
-            module = check_module(ast.as_path)
+            if ast.as_path in checked_modules:
+                raise RecursionError(f"recursive import of module {ast.as_path} at {name}")
+            
+            module = check_module(ast.as_path, checked_modules | {ast.as_path})
             scope.modules[ast.as_path] = module
+            
 
         elif type(ast) is Function:
             scope.functions.setdefault(ast.name, {})
