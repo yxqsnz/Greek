@@ -5,6 +5,7 @@ from .control import Control
 
 class BaseToken:
     value: str
+    line: int=0
 
     def __bool__(self):
         return bool(self.value)
@@ -71,15 +72,17 @@ class Keyword(BaseToken, Enum):
 KEYWORDS = sorted(Keyword.__members__.values(), key=len, reverse=True)
 
 class Name(BaseToken):
-    def __init__(self, value: str):
+    def __init__(self, value: str, line=-1):
         self.value = value
+        self.line = line
 
     def __repr__(self):
         return f'Name({self.value})'
 
 class Literal(BaseToken):
-    def __init__(self, value: str | int | float | bool):
+    def __init__(self, value: str | int | float | bool, line=-1):
         self.value = value
+        self.line = line
     
     def __repr__(self):
         return f'Literal({self.value})'
@@ -88,13 +91,18 @@ class Literal(BaseToken):
         return True
 
 class Comment(BaseToken):
-    def __init__(self, value: str | int | float | bool):
+    def __init__(self, value: str | int | float | bool, line=-1):
         self.value = value
+        self.line = line
         
     def __repr__(self):
         return f'Comment({self.value})'
 
-def lex_scan_name(seeker: Control, value: str) -> Name:
+@dataclass
+class Lexing:
+    line: int=1
+
+def lex_scan_name(lexing: Lexing, seeker: Control, value: str) -> Name:
     for char in seeker:
         if char >= 'a' and char <= 'z':
             value += char
@@ -105,18 +113,18 @@ def lex_scan_name(seeker: Control, value: str) -> Name:
     
     seeker.drop()
     
-    return Name(value)
+    return Name(value, line=lexing.line)
 
-def lex_scan_token(seeker: Control) -> Token:
+def lex_scan_token(lexing: Lexing, seeker: Control) -> Token:
     seeker.drop()
 
     for token in TOKENS:
         if seeker.equals(token):
             return token
     
-    raise SyntaxError(f"invalid token '{seeker.take()}'. at position {seeker.position}")
+    raise SyntaxError(f"invalid token '{seeker.take()}'. at line {lexing.line}")
 
-def lex_scan_stringliteral(seeker: Control, quote: str) -> Literal:
+def lex_scan_stringliteral(lexing: Lexing, seeker: Control, quote: str) -> Literal:
     value = ''
 
     for char in seeker:
@@ -125,9 +133,9 @@ def lex_scan_stringliteral(seeker: Control, quote: str) -> Literal:
         else:
             break
 
-    return Literal(value)
+    return Literal(value, line=lexing.line)
 
-def lex_scan_comment(seeker: Control) -> Comment:
+def lex_scan_comment(lexing: Lexing, seeker: Control) -> Comment:
     value = ''
 
     while seeker.take() == ' ':
@@ -141,9 +149,9 @@ def lex_scan_comment(seeker: Control) -> Comment:
         else:
             break
 
-    return Comment(value)
+    return Comment(value, line=lexing.line)
 
-def lex_scan_numericliteral(seeker: Control, value: str) -> Literal:
+def lex_scan_numericliteral(lexing: Lexing, seeker: Control, value: str) -> Literal:
     char = ''
 
     for char in seeker:
@@ -163,22 +171,27 @@ def lex_scan_numericliteral(seeker: Control, value: str) -> Literal:
         
         seeker.drop()
         
-        return Literal(float(value))
+        return Literal(float(value), line=lexing.line)
     
     seeker.drop()
 
-    return Literal(int(value))
+    return Literal(int(value), line=lexing.line)
 
 def lex(seeker: Control):
+    lexing = Lexing()
+
     for char in seeker:
-        if char == ' ' or char == '\n' or char == '\t':
+        if char == ' ' or char == '\t':
+            continue
+        elif char == '\n':
+            lexing.line += 1
             continue
         
         if char == '#':
-            yield lex_scan_comment(seeker)
+            yield lex_scan_comment(lexing, seeker)
 
         elif char >= 'a' and char <= 'z':
-            name = lex_scan_name(seeker, char)
+            name = lex_scan_name(lexing, seeker, char)
 
             if name.value in KEYWORDS:
                 yield Keyword(name.value)
@@ -186,12 +199,12 @@ def lex(seeker: Control):
                 yield name
         
         elif char == '_' or char >= 'A' and char <= 'Z':
-            yield lex_scan_name(seeker, char)
+            yield lex_scan_name(lexing, seeker, char)
         elif char >= '0' and char <= '9':
-            yield lex_scan_numericliteral(seeker, char)
+            yield lex_scan_numericliteral(lexing, seeker, char)
         elif char == '"' or char == "'":
-            yield lex_scan_stringliteral(seeker, char)
+            yield lex_scan_stringliteral(lexing, seeker, char)
         else:
-            yield lex_scan_token(seeker)
+            yield lex_scan_token(lexing, seeker)
     
     yield Token.EndOfFile
