@@ -57,7 +57,9 @@ def check(asts: Ast, name: Name):
 
     for ast in asts:
         if type(ast) is Import:
-            scope.modules[ast.as_path] = check_module(ast.as_path)
+            module = check_module(ast.as_path)
+            scope.modules[ast.as_path] = module
+
         elif type(ast) is Function:
             scope.functions.setdefault(ast.name, {})
             scope.functions[ast.name][tuple(ast.parameters.values())] = check_function(scope, ast)
