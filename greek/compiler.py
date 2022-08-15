@@ -19,13 +19,15 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             return pythontypes_to_greektypes(type(expression.value))
         
         elif type(expression) is Name:
-            if expression.value not in scope.variables:
-                if Type(name=expression.value) in scope.types:
-                    return Type(Name('int'))
-                else:
-                    raise NameError(f"unknown name {expression.value}")
+            if expression.value in scope.variables:
+                return scope.variables[expression.value][0]
+            elif expression.value in scope.constants:
+                return scope.constants[expression.value][0]
 
-            return scope.variables[expression.value][0]
+            if Type(name=expression.value) in scope.types:
+                return Type(Name('int'))
+            
+            raise NameError(f"unknown name {expression.value}")
         
         elif type(expression) is Item:
             signature = resolve_signature(expression.left)
@@ -291,7 +293,9 @@ def compile(scope: Scope, step=0):
         yield '#define voidptr void*'
         yield '#define function void*'
         yield '#define list_string char'
-
+    
+    for name, value in scope.constants.items():
+        yield f'#define {name.value} {compile_expression(scope, value[1])}'
 
     for module in scope.modules.values():
         if type(module) is Scope:

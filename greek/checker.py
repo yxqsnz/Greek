@@ -81,6 +81,6 @@ def check(asts: Ast, name: Name):
 
             scope.structs[ast.kind] = check_struct_declaration(scope, ast)
         elif type(ast) is Let:
-            scope.constants[ast.name] = ast
+            scope.constants[ast.name] = (ast.kind, ast.value)
 
     return scope
