@@ -71,7 +71,11 @@ def check(asts: Ast, name: Name, checked_modules=set()):
             
             module = check_module(ast.as_path, checked_modules | {ast.as_path})
             scope.modules[ast.as_path] = module
-            
+
+            for signatures in module.functions.values():
+                for function in signatures.values():
+                    if type(function) is ExternFunction:
+                        scope.modules[function.name] = function
 
         elif type(ast) is Function:
             scope.functions.setdefault(ast.name, {})
