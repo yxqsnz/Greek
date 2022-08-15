@@ -321,8 +321,5 @@ def compile(compilation: Compilation, scope: Scope, step=0):
                 function.name = Name(f'{function.name.value.replace("_", "__")}_{"_".join(kind.name.value for kind in signature)}')
 
             yield compile_function(scope, function)
-    
-    for name in scope.constants.keys():
-        yield f'#undef {name.value}'
-    
+
     return
