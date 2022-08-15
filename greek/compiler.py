@@ -305,8 +305,6 @@ def compile(scope: Scope, step=0):
         for signature, function in signatures.items():
             if len(signatures) > 1 and type(function) is Function:
                 function.name = Name(f'{function.name.value.replace("_", "__")}_{"_".join(kind.name.value for kind in signature)}')
-            else:
-                function.name = Name(f'{function.name.value.replace("_", "__")}')
 
             yield compile_function(scope, function)
     
