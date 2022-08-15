@@ -454,7 +454,7 @@ def parse(seeker: Control):
             if seeker.take() is Keyword.Fun:
                 yield parse_extern_function(seeker, seeker.take())
             else:
-                raise NotImplementedError
+                raise NotImplementedError("'extern' without 'fun' is not implemented")
         
         elif token is Keyword.Struct:
             yield parse_struct_declaration(seeker, parse_type(seeker, seeker.take()))

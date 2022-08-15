@@ -20,7 +20,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         
         elif type(expression) is Name:
             if expression.value not in scope.variables:
-                if Type(name=expression.value) in scope.structs:
+                if Type(name=expression.value) in scope.types:
                     return Type(Name('int'))
                 else:
                     raise NameError(f"unknown name {expression.value}")
