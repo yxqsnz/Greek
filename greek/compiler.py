@@ -68,8 +68,8 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         variable_name = None
         
         if module_path in scope.variables:
-            variable_kind = scope.variables[module_path][1].kind
-            variable_name = Name(f"{scope.name.value}.{variable_kind.value}")
+            variable_kind = scope.variables[module_path][0]
+            variable_name = Name(f"{scope.name.value}.{variable_kind.name.value}")
             function = scope.modules[variable_name]
         elif Type(Name(module_path)) in scope.structs:
             function = scope.structs[Type(Name(module_path))]
