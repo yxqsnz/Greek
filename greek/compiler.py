@@ -101,14 +101,16 @@ def resolve_call(scope: Scope, call: Call) -> Function:
 def compile_call(scope: Scope, call: Call, direct=False):
     function = resolve_call(scope, call)
 
-    if direct and type(function) is not ExternFunction:
-        return f'{scope.name.value.replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
+    if direct:
+        if type(function) is not ExternFunction:
+            if function.owner is not None:
+                return f'{function.owner.kind.as_name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
     
-    if direct and type(function) is not ExternFunction and function.owner is not None:
-        return f'{function.owner.kind.as_name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
-    
+            return f'{scope.name.value.replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
+        
     if type(function) is not ExternFunction and function.owner is not None:
-        compiled_expressions = (call.name.value.replace("." + function.name.value, "").replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
+        call_module, _ = _get_dot_bases(call.name.value)
+        compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
         return f'{function.owner.kind.as_name.value}__{function.name.value}({", ".join(compiled_expressions)})'
 
     if direct:
