@@ -14,7 +14,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-[tool.setuptools]
+[tool.hatch]
 py-modules = ["greek", "greek_cli"]
 
 [project.scripts]
