@@ -63,14 +63,17 @@ def resolve_call(scope: Scope, call: Call) -> Function:
     
     if '.' in call.name.value:
         module_path, function_name = _get_dot_bases(call.name.value)
+
+        variable_kind = None
+        variable_name = None
         
         if module_path in scope.variables:
             variable_kind = scope.variables[module_path][1].kind
             variable_name = Name(f"{scope.name.value}.{variable_kind.value}")
             function = scope.modules[variable_name]
+        elif Type(Name(module_path)) in scope.structs:
+            function = scope.structs[Type(Name(module_path))]
         else:
-            variable_kind = None
-            variable_name = None
             function = scope.modules[module_path]
         
         if function_name in function.functions:
