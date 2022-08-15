@@ -143,6 +143,8 @@ def lex_scan_comment(seeker: Control) -> Comment:
     return Comment(value)
 
 def lex_scan_numericliteral(seeker: Control, value: str) -> Literal:
+    char = ''
+    
     for char in seeker:
         if char == '_' or char >= '0' and char <= '9':
             value += char
