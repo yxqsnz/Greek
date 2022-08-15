@@ -13,3 +13,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
+[tool.setuptools]
+py-modules = ["greek", "greek_cli"]
+
+[project.scripts]
+greek = "greek_cli:main"
