@@ -1,12 +1,12 @@
 from argparse import ArgumentParser
 from os import path
 
-from greek import linter
+from greek import checker
 from greek import compiler
 
 
 def compile(file: str, output: str=None):
-    scope = linter.lint_module(compiler.Name(path.splitext(file)[0].replace('/', '.')))
+    scope = checker.lint_module(compiler.Name(path.splitext(file)[0].replace('/', '.')))
 
     if output is None:
         for compiled in compiler.compile(scope):

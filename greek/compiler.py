@@ -1,4 +1,4 @@
-from .linter import Scope, lint_function
+from .checker import Scope, lint_function
 from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
 NEWLINE = '\n'
