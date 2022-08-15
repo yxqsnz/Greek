@@ -411,7 +411,7 @@ def parse_function(parsing: Parsing, seeker: Control, name: Name) -> Function:
     
     return_type = parse_type(parsing, seeker, seeker.take())
 
-    return Function(name, return_type, parameters, parse_body(seeker))
+    return Function(name, return_type, parameters, parse_body(parsing, seeker))
 
 def parse_struct_declaration(parsing: Parsing, seeker: Control, kind: Type) -> StructDeclaration:
     if seeker.take() is not Token.LeftBrace:
