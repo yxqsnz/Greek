@@ -322,4 +322,7 @@ def compile(compilation: Compilation, scope: Scope, step=0):
 
             yield compile_function(scope, function)
     
+    for name in scope.constants.keys():
+        yield f'#undef {name.value}'
+    
     return
