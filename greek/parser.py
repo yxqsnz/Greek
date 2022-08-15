@@ -253,7 +253,7 @@ def parse_expression(seeker: Control, value: Expression, ignore=set()) -> Name:
         return parse_expression(seeker, Dot(value, parse_expression(seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual})), ignore)
     
     elif type(value) in (Name, Dot) and token is Token.LeftBracket:
-        item = Item(value, parse_expression(seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual}))
+        item = Item(value, parse_expression(seeker, seeker.take(), ignore=ignore))
 
         if (token := seeker.take()) is not Token.RightBracket:
             raise SyntaxError(f"expected ']'. found {token}")
