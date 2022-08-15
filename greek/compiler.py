@@ -268,7 +268,7 @@ def compile_function(scope: Scope, function: Function):
     return f'{INDENT}{compile_type(scope, function.return_type)} {scope.name.value.replace(".", "__")}__{function.name.value}({compiled_parameters}){compile_body(scope, function.body)}'
 
 def compile_struct(scope: Scope, struct: StructDeclaration):
-    compiled_struct_body = ' '.join(f'{compile_type(scope, kind)} {name.value};' for name, kind in zip(struct.names, struct.kinds))
+    compiled_struct_body = ' '.join(f'{compile_type(scope, kind)} {name.value};' for name, kind in zip(struct.names, struct.kinds) if kind.name != Name("function"))
     struct_functions = []
 
     scope = scope.copy()
