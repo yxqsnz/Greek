@@ -35,6 +35,7 @@ class Token(BaseToken, Enum):
     Slash=              '/'
     Percent=            '%'
     At=                 '@'
+    Ampersand=          '&'
     NotEqual=           '!='
     EqualEqual=         '=='
     LessThanEqual=      '<='
