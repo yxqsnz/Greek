@@ -21,6 +21,7 @@ class BaseToken:
 
 class Token(BaseToken, Enum):
     EndOfFile=          '\x00'
+    Line=               '\n'
     LeftParenthesis=    '('
     RightParenthesis=   ')'
     LeftBrace=          '{'
@@ -185,7 +186,7 @@ def lex(seeker: Control):
             continue
         elif char == '\n':
             lexing.line += 1
-            continue
+            yield Token.Line
         
         if char == '#':
             yield lex_scan_comment(lexing, seeker)

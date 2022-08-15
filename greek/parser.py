@@ -285,6 +285,8 @@ def parse_body(seeker: Control) -> Body:
     for token in seeker:
         if token is Token.RightBrace:
             break
+        elif token is Token.Line:
+            continue
 
         elif token is Keyword.Let:
             lines.append(parse_let(seeker, seeker.take()))
@@ -325,7 +327,7 @@ def parse_body(seeker: Control) -> Body:
 
 def parse_type(seeker: Control, name: Name) -> Type:
     if type(name) is not Name:
-        raise SyntaxError(f"expecting Name. found {name}")
+        raise SyntaxError(f"expecting Name, found {name}. at {name.line}")
     
     token = seeker.take()
 
@@ -416,6 +418,9 @@ def parse_struct_declaration(seeker: Control, kind: Type) -> StructDeclaration:
     functions = dict()
 
     for token in seeker:
+        if token is Token.Line:
+            continue
+
         if token is Token.RightBrace:
             break
 
@@ -444,6 +449,8 @@ def parse(seeker: Control):
     for token in seeker:
         if token is Token.EndOfFile:
             break
+        elif token is Token.Line:
+            continue
 
         if token is Keyword.Import:
             yield parse_import(seeker)
