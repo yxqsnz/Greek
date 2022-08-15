@@ -274,6 +274,7 @@ def compile(scope: Scope, step=0):
     if step == 0:
         yield '#define _CRT_SECURE_NO_WARNINGS'
         yield '#define _CRT_NONSTDC_NO_DEPRECATE'
+        
         yield '#include <stdbool.h>'
         yield '#include <malloc.h>'
         yield '#include <memory.h>'

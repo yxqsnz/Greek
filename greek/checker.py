@@ -18,48 +18,48 @@ class Scope:
     def copy(self):
         return type(self)(self.name, dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1)
 
-def lint_body(scope: Scope, body: Body):
+def check_body(scope: Scope, body: Body):
     for line in body.lines:
         if type(line) is Let:
             scope.variables[line.name] = (line.kind, line.value)
 
     return body
 
-def lint_function(scope: Scope, function: Function):
+def check_function(scope: Scope, function: Function):
     for name, kind in function.parameters.items():
         scope.variables[name] = (kind, None)
     
-    function.body = lint_body(scope, function.body)
+    function.body = check_body(scope, function.body)
     return function
 
-def lint_module(path: Expression):
+def check_module(path: Expression):
     tokens = list(lex(Control(open(path.value.replace('.', '/') + '.greek').read())))
     asts = list(parse(Control(tokens)))
     
-    return lint(asts, path)
+    return check(asts, path)
 
-def lint_struct_declaration(scope: Scope, struct_declaration: StructDeclaration):
+def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration):
     struct_scope = scope.copy()
 
     for signatures in struct_declaration.functions.values():
         for function in signatures.values():
             struct_scope.functions.setdefault(function.name, {})
-            struct_scope.functions[function.name][tuple(function.parameters.values())] = lint_function(struct_scope, function)
+            struct_scope.functions[function.name][tuple(function.parameters.values())] = check_function(struct_scope, function)
             function.owner = struct_declaration
     
     scope.modules[f'{scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
 
     return struct_declaration
 
-def lint(asts: Ast, name: Name):
+def check(asts: Ast, name: Name):
     scope = Scope(name, dict(), dict(), dict(), dict())
 
     for ast in asts:
         if type(ast) is Import:
-            scope.modules[ast.as_path] = lint_module(ast.as_path)
+            scope.modules[ast.as_path] = check_module(ast.as_path)
         elif type(ast) is Function:
             scope.functions.setdefault(ast.name, {})
-            scope.functions[ast.name][tuple(ast.parameters.values())] = lint_function(scope, ast)
+            scope.functions[ast.name][tuple(ast.parameters.values())] = check_function(scope, ast)
         elif type(ast) is ExternFunction:
             scope.functions.setdefault(ast.name, {})
             scope.functions[ast.name][tuple(ast.parameters.values())] = ast
@@ -67,6 +67,6 @@ def lint(asts: Ast, name: Name):
             if ast.kind in scope.structs:
                 raise NameError(f"type struct '{ast.kind.name}' already declared in module '{scope.name.value}'")
 
-            scope.structs[ast.kind] = lint_struct_declaration(scope, ast)
+            scope.structs[ast.kind] = check_struct_declaration(scope, ast)
 
     return scope
