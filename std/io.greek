@@ -1,10 +1,17 @@
+extern fun malloc(size: int) str
+extern fun free(buffer: str) void
+
 extern fun putchar(string_: char) void
 extern fun puts(string_: str) void
 
 import std.fmt
 
 fun print(int_: int) void {
-    puts(std.fmt.to_decimal(int_))
+    let decimal: str = std.fmt.to_decimal(int_)
+
+    puts(decimal)
+
+    free(decimal)
 }
 
 fun print(bool_: bool) void {
@@ -23,4 +30,3 @@ fun print(char_: char) void {
 fun print(string_: str) void {
     puts(string_)
 }
-
