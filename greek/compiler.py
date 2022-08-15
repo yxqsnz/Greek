@@ -113,7 +113,12 @@ def compile_call(scope: Scope, call: Call, direct=False):
         
     if type(function) is not ExternFunction and function.owner is not None:
         call_module, _ = _get_dot_bases(call.name.value)
-        compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
+        
+        if Name("self") is function.parameters:
+            compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
+        else:
+            compiled_expressions = tuple(compile_expression(scope, argument) for argument in call.arguments)
+
         return f'{function.owner.kind.as_name.value}__{function.name.value}({", ".join(compiled_expressions)})'
 
     if direct:
