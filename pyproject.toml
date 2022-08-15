@@ -19,3 +19,7 @@ py-modules = ["greek", "greek_cli"]
 
 [project.scripts]
 greek = "greek_cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
