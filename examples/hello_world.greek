@@ -17,5 +17,5 @@ fun main() int {
         "Lewis Carroll"
     }
 
-    Book.print(book)
+    book.print()
 }
