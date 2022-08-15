@@ -458,6 +458,9 @@ def parse(seeker: Control):
         
         elif token is Keyword.Struct:
             yield parse_struct_declaration(seeker, parse_type(seeker, seeker.take()))
+        
+        elif token is Keyword.Let:
+            yield parse_let(seeker, seeker.take())
 
         elif type(token) is Comment:
             yield token
