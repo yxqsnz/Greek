@@ -218,7 +218,7 @@ def parse_parenthesized_expression(parsing: Parsing, seeker: Control, value: Exp
 
 def parse_expression(parsing: Parsing, seeker: Control, value: Expression, ignore=set()) -> Name:
     if value is Token.LeftBracket:
-        return parse_expression(parsing, seeker, parse_array(seeker))
+        return parse_expression(parsing, seeker, parse_array(parsing, seeker))
     elif value is Token.LeftParenthesis:
         return parse_expression(parsing, seeker, parse_parenthesized_expression(parsing, seeker, seeker.take(), ignore))
     elif value is Token.Not:
