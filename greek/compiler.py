@@ -248,12 +248,15 @@ def compile_expression(scope: Scope, expression: Expression):
 
 def compile_type(scope: Scope, type_: Type | Name):
     if type(type_) is Name:
+        if type_.name.value == "pointer":
+            return "void*"
+            
         return type_.value
 
     if type_.subtype is None:
         if type_.name.value == "pointer":
             return "void*"
-            
+
         return type_.name.value
     
     if type_.name.value == "pointer":
