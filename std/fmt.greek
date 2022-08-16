@@ -17,6 +17,10 @@ fun len(source: str) int {
 fun len(integer: int) int {
     let i: int = 0
 
+    if integer == 0 {
+        return 1
+    }
+
     while integer {
         integer /= 10
         i += 1
@@ -85,6 +89,12 @@ fun slice(source: str, start: int, stop: int) str {
 fun to_decimal(integer: int) str {
     let integer_length: int = len(integer)
     let buffer: str = malloc(integer_length + 1)
+
+    if integer == 0 {
+        buffer[0] = 48
+        buffer[1] = 0
+    }
+
     let i: int = integer_length
 
     buffer[i] = 0
