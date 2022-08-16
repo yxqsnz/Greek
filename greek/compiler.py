@@ -66,7 +66,8 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         return Type(Name('void'))
     
     call_signature = tuple(resolve_signature(argument) for argument in call.arguments)
-    
+    function_scope = scope
+
     if type(call.name) is Dot:
         module_path, function_name = _get_dot_bases(call.name.as_name.value)
 
@@ -99,7 +100,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             raise NameError(f"there is no function named '{function_name}'")
 
         if call_signature in function:
-            function = function[call_signature]
+            function, function_scope = function[call_signature]
         else:
             print("avaliable signatues:", function.keys())
             print(call, scope.variables)
