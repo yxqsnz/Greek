@@ -59,9 +59,12 @@ def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration
     for signatures in struct_declaration.functions.values():
         for function in signatures.values():
             struct_scope.functions.setdefault(function.name, {})
-            struct_scope.functions[function.name][tuple(function.parameters.values())] = check_function(struct_scope, function)
+
+            function, function_scope = check_function(struct_scope, function)
+            struct_scope.functions[function.name][tuple(function.parameters.values())] = function, function_scope
             function.owner = struct_declaration
     
+    struct_scope.modules[f'{struct_scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
     scope.modules[f'{scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
 
     return (struct_declaration, struct_scope)

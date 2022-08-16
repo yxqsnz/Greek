@@ -78,7 +78,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             variable_kind = scope.variables[module_path][0]
             function, function_scope = scope.types[variable_kind]
         elif Type(Name(module_path)) in scope.structs:
-            function = scope.structs[Type(Name(module_path))]
+            function, struct_scope = scope.structs[Type(Name(module_path))]
         else:
             function = scope.modules[module_path]
         
@@ -86,9 +86,9 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             function = function.functions[function_name]
             
             if call_signature in function:
-                function = function[call_signature]
+                function, function_scope = function[call_signature]
             elif variable_kind and (method_call_signature := (variable_kind, *call_signature)) in function:
-                function = function[method_call_signature]
+                function, function_scope = function[method_call_signature]
             else:
                 raise NameError(f"there is no function named '{function_name}' in module '{module_path}' with signature {call_signature}'")
         
