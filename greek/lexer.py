@@ -28,6 +28,7 @@ class Token(BaseToken, Enum):
     RightBrace=         '}'
     LeftBracket=        '['
     RightBracket=       ']'
+    Not=                '!'
     Equal=              '='
     LessThan=           '<'
     GreaterThan=        '>'
