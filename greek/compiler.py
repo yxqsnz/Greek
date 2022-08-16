@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from .checker import Scope, check_function
-from .parser import Array, Ast, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
+from .parser import Array, Ast, Not, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
 NEWLINE = '\n'
 
@@ -59,6 +59,9 @@ def resolve_call(scope: Scope, call: Call) -> Function:
 
         elif type(expression) in (Add, Sub, Mul, Div, Rem):
             return resolve_signature(expression.left)
+        
+        elif type(expression) is Not:
+            return resolve_signature(expression.expression)
         
         return Type(Name('void'))
     
@@ -199,6 +202,8 @@ def compile_expression(scope: Scope, expression: Expression):
         return f'({compile_type(scope, expression.kind)}) {{{", ".join(compile_expression(scope, field) for field in expression.fields)}}}'
     elif type(expression) is Call:
         return compile_call(scope, expression, True)
+    elif type(expression) is Not:
+        return f'!{compile_expression(scope, expression.expression)}'
     elif type(expression) is Add:
         return f'{compile_expression(scope, expression.left)} + {compile_expression(scope, expression.right)}'
     elif type(expression) is Sub:

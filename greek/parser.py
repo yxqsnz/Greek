@@ -27,6 +27,10 @@ class Call:
     arguments: list["Expression"]
 
 @dataclass
+class Not:
+    expression: "Expression"
+
+@dataclass
 class Add:
     left: "Expression"
     right: "Expression"
@@ -217,6 +221,8 @@ def parse_expression(parsing: Parsing, seeker: Control, value: Expression, ignor
         return parse_expression(parsing, seeker, parse_array(seeker))
     elif value is Token.LeftParenthesis:
         return parse_expression(parsing, seeker, parse_parenthesized_expression(parsing, seeker, seeker.take(), ignore))
+    elif value is Token.Not:
+        return parse_expression(parsing, seeker, Not(parse_expression(parsing, seeker, seeker.take(), ignore)), ignore)
 
     token = seeker.take()
 
@@ -285,7 +291,7 @@ def parse_return(parsing: Parsing, seeker: Control) -> Return:
 
 def parse_body(parsing: Parsing, seeker: Control) -> Body:
     if (token := seeker.take()) is not Token.LeftBrace:
-        raise SyntaxError(f"expecting '{{'. found {token}")
+        raise SyntaxError(f"expecting '{{', found {token}. at {parsing.line}")
     
     lines = []
 

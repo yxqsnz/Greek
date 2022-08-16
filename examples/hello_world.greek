@@ -19,5 +19,7 @@ fun main() int {
         "Lewis Carroll"
     }
 
+    std.io.print(!1)
+
     book.print(book)
 }
