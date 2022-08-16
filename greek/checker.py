@@ -64,7 +64,7 @@ def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration
     
     scope.modules[f'{scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
 
-    return struct_declaration
+    return (struct_declaration, struct_scope)
 
 def check(asts: Ast, name: Name, checked_modules=set()):
     scope = Scope(name, dict(), dict(), dict(), dict(), dict())

@@ -325,8 +325,8 @@ def compile(compilation: Compilation, scope: Scope, step=0):
             compilation.compiled_modules |= {module.name}
             yield from compile(compilation, module, step + 1)
 
-    for struct in scope.structs.values():
-        yield compile_struct(scope, struct)
+    for struct, struct_scope in scope.structs.values():
+        yield compile_struct(struct_scope, struct)
 
     for signatures in scope.functions.values():
         for signature, (function, function_scope) in signatures.items():
