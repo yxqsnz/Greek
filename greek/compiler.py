@@ -308,6 +308,7 @@ def compile(compilation: Compilation, scope: Scope, step=0):
         yield '#include <stdbool.h>'
         yield '#include <malloc.h>'
         yield '#include <memory.h>'
+        yield '#include <string.h>'
         yield '#include <stdlib.h>'
         yield '#include <stdio.h>'
 
