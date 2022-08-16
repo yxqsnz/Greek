@@ -38,6 +38,9 @@ def check_body(scope: Scope, body: Body):
 def check_function(scope: Scope, function: Function):
     for name, kind in function.parameters.items():
         scope.variables[name] = (kind, None)
+
+        if name in ("str", "int", "pointer"):
+            raise ValueError(f'parameter names must not conflict with types. {name} == {name}. at {function.name}')
     
     function.body = check_body(scope, function.body)
     return function
