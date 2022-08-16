@@ -75,7 +75,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         
         if module_path in scope.variables:
             variable_kind = scope.variables[module_path][0]
-            function = scope.types[variable_kind]
+            function, function_scope = scope.types[variable_kind]
         elif Type(Name(module_path)) in scope.structs:
             function = scope.structs[Type(Name(module_path))]
         else:
@@ -105,7 +105,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
             print(call, scope.variables)
             raise ValueError(f"can't find a function named '{function_name}' with signature {call_signature}")
 
-    return function
+    return function, function_scope
 
 def compile_call(scope: Scope, call: Call, direct=False):
     function, function_scope = resolve_call(scope, call)
@@ -283,13 +283,13 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
     scope = scope.copy()
     
     for signatures in struct.functions.values():
-        for signature, (function, function_scope) in signatures.items():
+        for signature, function in signatures.items():
             if len(signatures) > 1:
                 function.name = Name(f'{function.name.value.replace("_", "__")}_{"_".join(kind.name.value for kind in signature)}')
             
-            struct_functions.append(check_function(function_scope, function))
+            struct_functions.append(check_function(scope, function))
 
-    return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(function_scope, function) for function in struct_functions)}'
+    return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(function_scope, function) for function, function_scope in struct_functions)}'
 
 @dataclass
 class Compilation:
