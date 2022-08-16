@@ -283,13 +283,13 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
     scope = scope.copy()
     
     for signatures in struct.functions.values():
-        for signature, function in signatures.items():
+        for signature, (function, function_scope) in signatures.items():
             if len(signatures) > 1:
                 function.name = Name(f'{function.name.value.replace("_", "__")}_{"_".join(kind.name.value for kind in signature)}')
             
-            struct_functions.append(check_function(scope, function))
+            struct_functions.append(check_function(function_scope, function))
 
-    return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(scope, function) for function in struct_functions)}'
+    return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(function_scope, function) for function in struct_functions)}'
 
 @dataclass
 class Compilation:
