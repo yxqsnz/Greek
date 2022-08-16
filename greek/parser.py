@@ -415,7 +415,10 @@ def parse_function(parsing: Parsing, seeker: Control, name: Name) -> Function:
                 raise SyntaxError(f"expecting ':' after function parameter {token}. found {took}")
 
             parameter_type = parse_type(parsing, seeker, seeker.take())
-            parameters[token] = parameter_type            
+            parameters[token] = parameter_type
+
+            if token == parameter_type.name:
+                raise NameError(f"parameter names must not be equal to type names. '{token}: {token}''. at line {parsing.line}")
         else:
             raise SyntaxError(f"expecting ',' or ')'. at {name} head")
     
