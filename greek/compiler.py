@@ -248,9 +248,9 @@ def compile_expression(scope: Scope, expression: Expression):
 
 def compile_type(scope: Scope, type_: Type | Name):
     if type(type_) is Name:
-        if type_.name.value == "pointer":
+        if type_.value == "pointer":
             return "void*"
-            
+
         return type_.value
 
     if type_.subtype is None:
