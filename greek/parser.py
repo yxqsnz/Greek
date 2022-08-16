@@ -147,6 +147,11 @@ class StructDeclaration:
     functions: dict[Name, dict[tuple[Name], Function]]
 
 @dataclass
+class EnumDeclaration:
+    kind: Type
+    names: list[Name]
+
+@dataclass
 class Struct:
     kind: Type
     fields: list[Expression]
@@ -463,6 +468,26 @@ def parse_struct_declaration(parsing: Parsing, seeker: Control, kind: Type) -> S
 
     return StructDeclaration(kind, names, kinds, functions)
 
+def parse_enum_declaration(parsing: Parsing, seeker: Control, kind: Type):
+    if seeker.take() is not Token.LeftBrace:
+        raise SyntaxError
+        
+    names = []
+
+    for token in seeker:
+        if token is Token.Line:
+            parsing.line += 1
+            continue
+        elif token is Token.Comma:
+            continue
+
+        if token is Token.RightBrace:
+            break
+        elif type(token) is Name:
+            names.append(token)
+
+    return EnumDeclaration(kind, names)
+
 def parse(seeker: Control):
     parsing = Parsing()
 
@@ -486,6 +511,9 @@ def parse(seeker: Control):
         
         elif token is Keyword.Struct:
             yield parse_struct_declaration(parsing, seeker, parse_type(parsing, seeker, seeker.take()))
+        
+        elif token is Keyword.Enum:
+            yield parse_enum_declaration(parsing, seeker, parse_type(parsing, seeker, seeker.take()))
         
         elif token is Keyword.Let:
             yield parse_let(parsing, seeker, seeker.take())

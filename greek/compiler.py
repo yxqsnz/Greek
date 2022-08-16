@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from .checker import Scope, check_function
-from .parser import Array, Ast, Not, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
+from .parser import Array, Ast, Not, Add, Dot, Else, Item, ExternFunction, NotEqual, Return, Set, SetAdd, SetSub, SetMul, SetDiv, SetRem, Equal, GreaterThan, If, LessThan, Let, Struct, StructDeclaration, EnumDeclaration, Sub, Mul, Div, Rem, Expression, Literal, Type, Name, Call, Function, Body, While
 
 NEWLINE = '\n'
 
@@ -299,6 +299,9 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
 
     return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(function_scope, function) for function, function_scope in struct_functions)}'
 
+def compile_enum(scope: Scope, enum: EnumDeclaration):
+    return f'typedef enum {{ {", ".join(name.value for name in enum.names)} }} {compile_type(scope, enum.kind)};'
+
 @dataclass
 class Compilation:
     compiled_functions: set[Name]
@@ -335,6 +338,9 @@ def compile(compilation: Compilation, scope: Scope, step=0):
 
     for struct, struct_scope in scope.structs.values():
         yield compile_struct(struct_scope, struct)
+    
+    for enum, enum_scope in scope.enums.values():
+        yield compile_enum(enum_scope, enum)
 
     for signatures in scope.functions.values():
         for signature, (function, function_scope) in signatures.items():

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 from .control import Control
-from .parser import Ast, Expression, ExternFunction, Import, Name, Type, StructDeclaration, Function, Body, Let
-from .lexer import lex
+from .parser import Ast, EnumDeclaration, Expression, ExternFunction, Import, Name, Type, StructDeclaration, Function, Body, Let
+from .lexer import lex, Literal
 from .parser import parse
 
 @dataclass
@@ -13,10 +13,11 @@ class Scope:
     functions: dict[Name, dict[tuple[Name], Function]]
     modules: dict[Name, "Scope"]
     structs: dict[Type, StructDeclaration]
+    enums: dict[Type, EnumDeclaration]
     indent: int=0
     
     def copy(self):
-        return type(self)(self.name, dict(self.constants), dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), self.indent + 1)
+        return type(self)(self.name, dict(self.constants), dict(self.variables), dict(self.functions), dict(self.modules), dict(self.structs), dict(self.enums), self.indent + 1)
     
     @property
     def types(self):
@@ -66,8 +67,14 @@ def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration
 
     return (struct_declaration, scope)
 
+def check_enum_declaration(scope: Scope, enum_declaration: EnumDeclaration):
+    for i, name in enumerate(enum_declaration.names):
+        scope.variables[name] = (Type(Name('int')), Literal(i))
+
+    return enum_declaration, scope
+
 def check(asts: Ast, name: Name, checked_modules=set()):
-    scope = Scope(name, dict(), dict(), dict(), dict(), dict())
+    scope = Scope(name, dict(), dict(), dict(), dict(), dict(), dict())
 
     for ast in asts:
         if type(ast) is Import:
@@ -96,6 +103,11 @@ def check(asts: Ast, name: Name, checked_modules=set()):
             scope.structs[ast.kind] = (struct, struct_scope)
 
             struct_scope.structs |= scope.structs
+        elif type(ast) is EnumDeclaration:
+            if ast.kind in scope.enums:
+                raise NameError(f"type enum '{ast.kind.name}' already declared in module '{scope.name.value}'")
+            
+            scope.enums[ast.kind] = check_enum_declaration(scope, ast)
 
         elif type(ast) is Let:
             scope.constants[ast.name] = (ast.kind, ast.value)
