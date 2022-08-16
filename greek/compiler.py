@@ -12,6 +12,8 @@ def pythontypes_to_greektypes(type: type):
     return Type({str: Name('str'), int: Name('int'), float: Name('float')}[type])
 
 def resolve_call(scope: Scope, call: Call) -> Function:
+    scope = scope.copy()
+
     def resolve_signature(expression: Expression):
         if type(expression) is Call:
             return resolve_call(scope, expression).return_type
@@ -49,11 +51,11 @@ def resolve_call(scope: Scope, call: Call) -> Function:
                 return resolve_call(scope, Call(expression.as_name, list(dot_call.arguments))).return_type
 
             signature = resolve_signature(expression.left)
-            
+
             if signature.name.value == 'pointer':
-                struct = scope.structs[signature.subtype]
+                struct, struct_scope = scope.structs[signature.subtype]
             else:
-                struct = scope.structs[signature]
+                struct, struct_scope = scope.structs[signature]
 
             return struct.kinds[struct.names.index(expression.right)]
 
@@ -77,6 +79,7 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         if module_path in scope.variables:
             variable_kind = scope.variables[module_path][0]
             function, function_scope = scope.types[variable_kind]
+
         elif Type(Name(module_path)) in scope.structs:
             function, struct_scope = scope.structs[Type(Name(module_path))]
         else:
@@ -84,11 +87,11 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         
         if function_name in function.functions:
             function = function.functions[function_name]
-            
+
             if call_signature in function:
                 function, function_scope = function[call_signature]
             elif variable_kind and (method_call_signature := (variable_kind, *call_signature)) in function:
-                function, function_scope = function[method_call_signature]
+                function = function[method_call_signature]
             else:
                 raise NameError(f"there is no function named '{function_name}' in module '{module_path}' with signature {call_signature}'")
         
@@ -288,7 +291,11 @@ def compile_struct(scope: Scope, struct: StructDeclaration):
             if len(signatures) > 1:
                 function.name = Name(f'{function.name.value.replace("_", "__")}_{"_".join(kind.name.value for kind in signature)}')
             
-            struct_functions.append(check_function(scope, function))
+            function, function_scope = check_function(scope, function)
+
+            function_scope.structs |= scope.structs
+
+            struct_functions.append((function, function_scope))
 
     return f'typedef struct {{ {compiled_struct_body} }} {compile_type(scope, struct.kind)};{NEWLINE}{NEWLINE.join(compile_function(function_scope, function) for function, function_scope in struct_functions)}'
 

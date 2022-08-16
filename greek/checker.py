@@ -36,8 +36,6 @@ def check_body(scope: Scope, body: Body):
     return body
 
 def check_function(scope: Scope, function: Function):
-    scope = scope.copy()
-
     for name, kind in function.parameters.items():
         scope.variables[name] = (kind, None)
 
@@ -54,20 +52,19 @@ def check_module(path: Expression, checked_modules=set()):
     return check(asts, path, checked_modules)
 
 def check_struct_declaration(scope: Scope, struct_declaration: StructDeclaration):
-    struct_scope = scope.copy()
+    scope = scope.copy()
 
     for signatures in struct_declaration.functions.values():
         for function in signatures.values():
-            struct_scope.functions.setdefault(function.name, {})
+            scope.functions.setdefault(function.name, {})
 
-            function, function_scope = check_function(struct_scope, function)
-            struct_scope.functions[function.name][tuple(function.parameters.values())] = function, function_scope
+            function, function_scope = check_function(scope, function)
+            scope.functions[function.name][tuple(function.parameters.values())] = function, function_scope
             function.owner = struct_declaration
     
-    struct_scope.modules[f'{struct_scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
     scope.modules[f'{scope.name.value}.{struct_declaration.kind.name.value}'] = struct_declaration
 
-    return (struct_declaration, struct_scope)
+    return (struct_declaration, scope)
 
 def check(asts: Ast, name: Name, checked_modules=set()):
     scope = Scope(name, dict(), dict(), dict(), dict(), dict())
@@ -87,7 +84,7 @@ def check(asts: Ast, name: Name, checked_modules=set()):
 
         elif type(ast) is Function:
             scope.functions.setdefault(ast.name, {})
-            scope.functions[ast.name][tuple(ast.parameters.values())] = check_function(scope, ast)
+            scope.functions[ast.name][tuple(ast.parameters.values())] = check_function(scope.copy(), ast)
         elif type(ast) is ExternFunction:
             scope.functions.setdefault(ast.name, {})
             scope.functions[ast.name][tuple(ast.parameters.values())] = (ast, scope)
@@ -95,7 +92,11 @@ def check(asts: Ast, name: Name, checked_modules=set()):
             if ast.kind in scope.structs:
                 raise NameError(f"type struct '{ast.kind.name}' already declared in module '{scope.name.value}'")
 
-            scope.structs[ast.kind] = check_struct_declaration(scope, ast)
+            struct, struct_scope = check_struct_declaration(scope, ast)
+            scope.structs[ast.kind] = (struct, struct_scope)
+
+            struct_scope.structs |= scope.structs
+
         elif type(ast) is Let:
             scope.constants[ast.name] = (ast.kind, ast.value)
 
