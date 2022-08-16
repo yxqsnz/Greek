@@ -36,6 +36,8 @@ def check_body(scope: Scope, body: Body):
     return body
 
 def check_function(scope: Scope, function: Function):
+    scope = scope.copy()
+
     for name, kind in function.parameters.items():
         scope.variables[name] = (kind, None)
 
@@ -43,7 +45,7 @@ def check_function(scope: Scope, function: Function):
             raise ValueError(f'parameter names must not conflict with types. {name} == {name}. at {function.name}')
     
     function.body = check_body(scope, function.body)
-    return function
+    return function, scope
 
 def check_module(path: Expression, checked_modules=set()):
     tokens = list(lex(Control(open(path.value.replace('.', '/') + '.greek').read())))
@@ -85,7 +87,7 @@ def check(asts: Ast, name: Name, checked_modules=set()):
             scope.functions[ast.name][tuple(ast.parameters.values())] = check_function(scope, ast)
         elif type(ast) is ExternFunction:
             scope.functions.setdefault(ast.name, {})
-            scope.functions[ast.name][tuple(ast.parameters.values())] = ast
+            scope.functions[ast.name][tuple(ast.parameters.values())] = (ast, scope)
         elif type(ast) is StructDeclaration:
             if ast.kind in scope.structs:
                 raise NameError(f"type struct '{ast.kind.name}' already declared in module '{scope.name.value}'")

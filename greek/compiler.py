@@ -101,52 +101,14 @@ def resolve_call(scope: Scope, call: Call) -> Function:
         if call_signature in function:
             function = function[call_signature]
         else:
+            print("avaliable signatues:", function.keys())
+            print(call, scope.variables)
             raise ValueError(f"can't find a function named '{function_name}' with signature {call_signature}")
-
-
-    '''
-    if '.' in call.name.value:
-        module_path, function_name = _get_dot_bases(call.name.value)
-
-        variable_kind = None
-        variable_name = None
-        
-        if module_path in scope.variables:
-            variable_kind = scope.variables[module_path][0]
-            function = scope.types[variable_kind]
-        elif Type(Name(module_path)) in scope.structs:
-            function = scope.structs[Type(Name(module_path))]
-        else:
-            function = scope.modules[module_path]
-        
-        if function_name in function.functions:
-            function = function.functions[function_name]
-            
-            if call_signature in function:
-                function = function[call_signature]
-            elif variable_kind and (method_call_signature := (variable_kind, *call_signature)) in function:
-                function = function[method_call_signature]
-            else:
-                raise NameError(f"there is no function named '{function_name}' in module '{module_path}' with signature {call_signature}'")
-        else:
-            raise NameError(f"there is no function named '{function_name}' in module '{module_path}'")
-    else:
-        function_name = call.name.value
-        function = scope.functions[function_name]
-        
-        if function_name not in scope.functions:
-            raise NameError(f"there is no function named '{function_name}'")
-
-        if call_signature in function:
-            function = function[call_signature]
-        else:
-            raise ValueError(f"can't find a function named '{function_name}' with signature {call_signature}")
-    '''
 
     return function
 
 def compile_call(scope: Scope, call: Call, direct=False):
-    function = resolve_call(scope, call)
+    function, function_scope = resolve_call(scope, call)
     compiled_arguments = tuple(compile_expression(scope, argument) for argument in call.arguments)
 
     if type(call.name) is Dot:
@@ -164,33 +126,9 @@ def compile_call(scope: Scope, call: Call, direct=False):
     
     if type(function) is ExternFunction:
         return f'{function.name.value}({", ".join(compiled_arguments)})'
-
+    
     return f'{scope.name.value.replace(".", "__")}__{function.name.value}({", ".join(compiled_arguments)})'
     
-
-    '''
-    if direct:
-        if type(function) is not ExternFunction:
-            if function.owner is not None:
-                return f'{function.owner.kind.as_name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
-    
-            return f'{scope.name.value.replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
-        
-    if type(function) is not ExternFunction and function.owner is not None:
-        call_module, _ = _get_dot_bases(call.name.value)
-        
-        if Name("self") in function.parameters and Type(Name(call_module)) not in scope.structs:
-            compiled_expressions = (call_module.replace(".", "__"), *(compile_expression(scope, argument) for argument in call.arguments))
-        else:
-            compiled_expressions = tuple(compile_expression(scope, argument) for argument in call.arguments)
-
-        return f'{function.owner.kind.as_name.value}__{function.name.value}({", ".join(compiled_expressions)})'
-
-    if direct:
-        return f'{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
-    
-    return f'{_get_dot_bases(call.name.value)[0].replace(".", "__")}__{function.name.value}({", ".join(compile_expression(scope, argument) for argument in call.arguments)})'
-    '''
 def compile_expression(scope: Scope, expression: Expression):
     if type(expression) is Name:
         if Type(expression) in scope.structs:
@@ -390,10 +328,10 @@ def compile(compilation: Compilation, scope: Scope, step=0):
         yield compile_struct(scope, struct)
 
     for signatures in scope.functions.values():
-        for signature, function in signatures.items():
+        for signature, (function, function_scope) in signatures.items():
             if len(signatures) > 1 and type(function) is Function:
                 function.name = Name(f'{function.name.value.replace("_", "__")}_{"_".join(kind.name.value for kind in signature)}')
 
-            yield compile_function(scope, function)
+            yield compile_function(function_scope, function)
 
     return
