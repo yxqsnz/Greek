@@ -319,7 +319,7 @@ def compile_body(scope: Scope, body: Body):
 
 def compile_function(scope: Scope, function: Function):
     INDENT = '\n' + ('  ' * scope.indent)
-    compiled_parameters = ", ".join(f'{kind.name.value} {parameter.value}' for parameter, kind in function.parameters.items())
+    compiled_parameters = ", ".join(f'{compile_type(scope, kind)} {parameter.value}' for parameter, kind in function.parameters.items())
     
     if type(function) is ExternFunction:
         return f'// {function.return_type.name.value} {function.name.value}({compiled_parameters});'
