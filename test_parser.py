@@ -1,10 +1,12 @@
-from greek.control import Control
-from greek import lexer
-from greek import parser
+from sys import argv
 
-from pprint import pprint
+from greek.source import Source
+from greek.lexer import Lexer
+from greek.parser import Parser
 
-tokens = list(lexer.lex(Control(open('examples/hello_world.greek').read())))
+path = argv[-1] if argv[1:] else "examples/hello_world.greek"
 
-for ast in parser.parse(Control(tokens)):
-    print(pprint(ast))
+tokens = tuple(Lexer(Source(open(path).read())))
+
+for ast in Parser(Source(tokens)):
+    print(ast)

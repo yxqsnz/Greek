@@ -1,14 +1,14 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
-from .control import Control
+from .source import Source
 
 class BaseToken:
     value: str
     line: int=0
 
     def __bool__(self):
-        return bool(self.value)
+        return True
 
     def __len__(self):
         return len(self.value)
@@ -18,10 +18,17 @@ class BaseToken:
     
     def __eq__(self, value: str):
         return self.value == value
+    
+    @property
+    def kind(self):
+        return Name(type(self).__name__)
+        
+    @property
+    def format(self):
+        return str(self.value)
 
 class Token(BaseToken, Enum):
-    EndOfFile=          '\x00'
-    Line=               '\n'
+    EndOfFile=          '\0'
     LeftParenthesis=    '('
     RightParenthesis=   ')'
     LeftBrace=          '{'
@@ -37,8 +44,10 @@ class Token(BaseToken, Enum):
     Star=               '*'
     Slash=              '/'
     Percent=            '%'
-    At=                 '@'
     Ampersand=          '&'
+    VerticalBar=        '|'
+    Caret=              '^'
+    Tilde=              '~'
     NotEqual=           '!='
     EqualEqual=         '=='
     LessThanEqual=      '<='
@@ -48,172 +57,198 @@ class Token(BaseToken, Enum):
     StarEqual=          '*='
     SlashEqual=         '/='
     PercentEqual=       '%='
+    AmpersandEqual=     '&='
+    VerticalBarEqual=   '|='
+    CaretEqual=         '^='
     Colon=              ':'
     Semicolon=          ';'
     Dot=                '.'
     Comma=              ','
-    ColonColon=         '::'
-
-TOKENS = sorted(Token.__members__.values(), key=len, reverse=True)
 
 class Keyword(BaseToken, Enum):
-    Import=             'import'
-    From=               'from'
     Extern=             'extern'
+    Import=             'import'
     Struct=             'struct'
     Enum=               'enum'
+    Let=                'let'
     Fun=                'fun'
     Return=             'return'
-    Let=                'let'
     If=                 'if'
     Else=               'else'
     While=              'while'
     For=                'for'
     In=                 'in'
 
+TOKENS = sorted(Token.__members__.values(), key=len, reverse=True)
 KEYWORDS = sorted(Keyword.__members__.values(), key=len, reverse=True)
 
+@dataclass(eq=False)
 class Name(BaseToken):
-    def __init__(self, value: str, line=-1):
-        self.value = value
-        self.line = line
+    value: str
+    line: int=0
 
-    def __repr__(self):
-        return f'Name({self.value})'
+    def __hash__(self):
+        return hash(self.value)
 
-class Literal(BaseToken):
-    def __init__(self, value: str | int | float | bool, line=-1):
-        self.value = value
-        self.line = line
+@dataclass(eq=False)
+class Type(BaseToken):
+    value: Name
+
+    def __hash__(self):
+        return hash(self.value)
+
+    def __eq__(self, value: str):
+        if self.value == Name('any'):
+            return True
+        elif self.value == Name('ptr'):
+            return True
+
+        return self.value == value
     
-    def __repr__(self):
-        return f'Literal({self.value})'
+    @property
+    def format(self):
+        return self.value.format
+    
+    @property
+    def kind(self):
+        return type(self)(Name('type'))
 
-    def __bool__(self):
-        return True
+class Literal(Name):
+    value: str | int | float
 
-class Comment(BaseToken):
-    def __init__(self, value: str | int | float | bool, line=-1):
-        self.value = value
-        self.line = line
+    @property
+    def kind(self):
+        if type(self.value) is str:
+            return Type(Name('str'))
+        elif type(self.value) is int:
+            return Type(Name('int'))
+        elif type(self.value) is float:
+            return Type(Name('float'))
+        elif type(self.value) is bool:
+            return Type(Name('float'))
         
-    def __repr__(self):
-        return f'Comment({self.value})'
+        return Type(Name('void'))
 
-@dataclass
-class Lexing:
-    line: int=1
+    @property
+    def format(self):
+        return repr(self.value)
 
-def lex_scan_name(lexing: Lexing, seeker: Control, value: str) -> Name:
-    for char in seeker:
-        if char >= 'a' and char <= 'z':
-            value += char
-        elif char == '_' or char >= 'A' and char <= 'Z' or char >= '0' and char <= '9':
-            value += char
-        else:
-            break
+class Comment(Name):
+    value: str
+
+class Lexer:
+    def __init__(self, source: Source, position=0, line=1):
+        self.source = source
+        self.position = position
+        self.line = line
     
-    seeker.drop()
+    def __iter__(self):
+        return self.lex()
     
-    return Name(value, line=lexing.line)
+    def scan_token(self) -> Token:
+        self.source.unlook()
 
-def lex_scan_token(lexing: Lexing, seeker: Control) -> Token:
-    seeker.drop()
+        for token in TOKENS:
+            token_length = len(token)
 
-    for token in TOKENS:
-        if seeker.equals(token):
-            return token
+            if self.source.look(token_length) == token:
+                token.line = self.line
+
+                return token
+            
+            self.source.unlook(token_length)
+
+        raise SyntaxError(f"unknown token {self.source.look()!r} at line {self.line}")
     
-    raise SyntaxError(f"invalid token '{seeker.take()}'. at line {lexing.line}")
+    def scan_name_keyword_or_bool_literal(self, value: str) -> Name | Keyword | Literal:
+        char = ''
 
-def lex_scan_stringliteral(lexing: Lexing, seeker: Control, quote: str) -> Literal:
-    value = ''
+        for char in self.source:
+            if char >= 'a' and char <= 'z' or char >= 'A' and char <= 'Z' or char == '_':
+                value += char
+            else:
+                self.source.unlook()
+                break
+        
+        if value in KEYWORDS:
+            keyword = Keyword(value)
+            keyword.line = self.line
 
-    for char in seeker:
-        if char != quote:
-            value += char
-        else:
-            break
+            return keyword
+        elif value == "true":
+            return Literal(True)
+        elif value == "false":
+            return Literal(False)
 
-    return Literal(value, line=lexing.line)
-
-def lex_scan_comment(lexing: Lexing, seeker: Control) -> Comment:
-    value = ''
-
-    while seeker.take() == ' ':
-        continue
-    else:
-        seeker.drop()
-
-    for char in seeker:
-        if char != '\n':
-            value += char
-        else:
-            break
-
-    return Comment(value, line=lexing.line)
-
-def lex_scan_numericliteral(lexing: Lexing, seeker: Control, value: str) -> Literal:
-    char = ''
-
-    for char in seeker:
-        if char == '_' or char >= '0' and char <= '9':
-            value += char
-        else:
-            break
+        return Name(value, self.line)
     
-    if char == '.':
-        value += '.'
+    def scan_string_literal(self, quote: str):
+        value = ''
 
-        for char in seeker:
-            if char == '_' or char >= '0' and char <= '9':
+        for char in self.source:
+            if char != quote:
                 value += char
             else:
                 break
         
-        if char:
-            seeker.drop()
-        
-        return Literal(float(value), line=lexing.line)
+        return Literal(value, self.line)
     
-    if char:
-        seeker.drop()
+    def scan_numeric_literal(self, value: str):
+        char = ''
 
-    return Literal(int(value), line=lexing.line)
-
-def lex(seeker: Control):
-    lexing = Lexing()
-
-    for char in seeker:
-        if char == '':
-            break
-
-        if char == ' ' or char == '\t':
-            continue
-        elif char == '\n':
-            lexing.line += 1
-            yield Token.Line
-            continue
-        
-
-        if char == '#':
-            yield lex_scan_comment(lexing, seeker)
-
-        elif char >= 'a' and char <= 'z':
-            name = lex_scan_name(lexing, seeker, char)
-
-            if name.value in KEYWORDS:
-                yield Keyword(name.value)
+        for char in self.source:
+            if char >= '0' and char <= '9' or char == '_':
+                value += char
             else:
-                yield name
-        
-        elif char == '_' or char >= 'A' and char <= 'Z':
-            yield lex_scan_name(lexing, seeker, char)
-        elif char >= '0' and char <= '9':
-            yield lex_scan_numericliteral(lexing, seeker, char)
-        elif char == '"' or char == "'":
-            yield lex_scan_stringliteral(lexing, seeker, char)
-        else:
-            yield lex_scan_token(lexing, seeker)
+                if char == '.':
+                    value += char
+
+                    for char in self.source:
+                        if char >= '0' and char <= '9' or char == '_':
+                            value += char
+                        else:
+                            self.source.unlook()
+                            break
+                    
+                    return Literal(float(value), self.line) 
+                
+                self.source.unlook()
+                break
+
+        return Literal(int(value), self.line)
     
-    yield Token.EndOfFile
+    def scan_comment(self, value: str):
+        for char in self.source:
+            if char != '\n':
+                value += char
+            else:
+                break
+        
+        comment = Comment(value.strip(), self.line)
+        self.line += 1
+
+        return comment
+
+    def lex(self):
+        for char in self.source:
+            if char == ' ' or char == '\t':
+                continue
+            elif char == '\n':
+                self.line += 1
+                continue
+
+            if char >= 'a' and char <= 'z' or char >= 'A' and char <= 'Z' or char == '_':
+                yield self.scan_name_keyword_or_bool_literal(char)
+            elif char >= '0' and char <= '9':
+                yield self.scan_numeric_literal(char)
+            elif char == '"' or char == "'":
+                yield self.scan_string_literal(char)
+            elif char == '#':
+                yield self.scan_comment(char)
+            else:
+                yield self.scan_token()
+        
+        token = Token.EndOfFile
+        token.line = self.line
+
+        yield token

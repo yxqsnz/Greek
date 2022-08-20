@@ -1,25 +1,20 @@
 import std.io
-import std.fmt
-
-let HELLO: int = 50
 
 struct Book {
     title: str
     author: str
 
-    fun print(self: Book) void {
+    fun show(self: Book) void {
         std.io.print(self.title)
         std.io.print(self.author)
     }
 }
 
 fun main() int {
-    let book: Book = Book {
+    let alice: Book = Book {
         "Alice No Pais Das Maravilhas",
         "Lewis Carroll"
     }
 
-    std.io.print(!1)
-
-    book.print(book)
+    Book.show(alice)
 }

@@ -1,24 +1,42 @@
 from argparse import ArgumentParser
 from os import path
 
-from greek import checker
-from greek import compiler
+from greek.compiler import Compiler, Compilation
+from greek.source import Source
+from greek.lexer import Lexer
+from greek.parser import Parser
+from greek.checker import Module, Checker
 
 
 def compile(file: str, output: str=None):
-    scope = checker.check_module(compiler.Name(path.splitext(file)[0].replace('/', '.')))
-    compilation = compiler.Compilation.new()
+    tokens = tuple(Lexer(Source(open(file).read())))
+    asts = tuple(Parser(Source(tokens)))
+    checker = Checker(asts, Module.new("main"))
 
-    if output is None:
-        for compiled in compiler.compile(compilation, scope):
-            print(compiled)
+    lines = [
+        '#define _CRT_SECURE_NO_WARNINGS',
+        '#define _CRT_NONSTDC_NO_DEPRECATE',
+
+        '#define any char*',
+        '#define str char*',
+        '#define ptr char*',
+
+        '#include <stdbool.h>',
+        '#include <stdio.h>',
+        '#include <stdlib.h>',
+        '#include <string.h>',
+        '#include <memory.h>',
+        '#include <malloc.h>',
+    ]
+
+    for code in Compiler(checker.check(), Compilation.new()):
+        lines.append(code)
     
+    if output is None:
+        for line in lines:
+            print(line)
     else:
-        stream = open(output, 'w')
-
-        for compiled in compiler.compile(compilation, scope):
-            stream.write(compiled)
-            stream.write('\n')
+        open(output, 'w').write("\n".join(lines))
     
     return
 

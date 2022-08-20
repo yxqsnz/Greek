@@ -1,526 +1,671 @@
+from ast import arguments
 from dataclasses import dataclass
-
-from .lexer import Token, Keyword, Literal, Comment, Name
-from .control import Control
+from typing import TYPE_CHECKING
+from .lexer import Token, Keyword, Name, Type
+from .source import Source
 
 @dataclass
-class Type:
-    name: Name
-    subtype: Name=None
+class BinaryOperation:
+    left: "Expression"
+    operator: Token
+    right: "Expression"
 
-    def __hash__(self):
-        return hash(self.name)
+    @property
+    def line(self):
+        return self.left.line
     
     @property
-    def as_name(self) -> Name:
-        if self.subtype is None:
-            return self.name
-            
-        if type(self.subtype) is Type:
-            return Name(f'{self.name.value}@{self.subtype.as_name.value}')
-        
-        return Name(f'{self.name.value}@{self.subtype.value}')
+    def kind(self):
+        return self.left.kind
+    
+    @property
+    def format(self):
+        return f'{self.left.format} {self.operator.value} {self.right.format}'
 
 @dataclass
-class Call:
-    name: Name
-    arguments: list["Expression"]
-
-@dataclass
-class Not:
-    expression: "Expression"
-
-@dataclass
-class Add:
+class Dot:
     left: "Expression"
     right: "Expression"
 
-class Sub(Add): pass
-class Mul(Add): pass
-class Div(Add): pass
-class Rem(Add): pass
-
-class NotEqual(Add): pass
-class Equal(Add): pass
-class LessThan(Add): pass
-class GreaterThan(Add): pass
-class LessThanEqual(Add): pass
-class GreaterThanEqual(Add): pass
-
-class Item(Add): pass
-
-class Dot(Add):
     @property
-    def as_name(self) -> Name:
-        if type(self.right) is Dot: 
-            return Name(f'{self.left.value}.{self.right.as_name.value}')
-        elif type(self.right) is Call:
-            return Name(f'{self.left.value}.{self.right.name.value}')
-
-        return Name(f'{self.left.value}.{self.right.value}')
+    def line(self):
+        return self.left.line
     
     @property
-    def get_call(self):
-        if type(self.right) is Call:
-            return self.right
-        elif type(self.right) is Dot:
-            return self.right.get_call
-        
-        return
+    def format(self):
+        return f'{self.left.format}.{self.right.format}'
 
-Expression = Call | Add
+if TYPE_CHECKING:
+    from .checker import Module
+
+@dataclass(eq=False, repr=False) # caution: enabling repr could lead to recursion
+class Call:
+    head: "Expression"
+    arguments: list["Expression"]
+    function_head: "FunctionHead"=None
+    function_module: "Module"=None
+
+    def __repr__(self):
+        return f'Call(head={self.head}, arguments={self.arguments})'
+
+    @property
+    def line(self):
+        return self.head.line
+    
+    @property
+    def format(self):
+        return f'{self.head.format}(...)'
+
+@dataclass(eq=False)
+class Item:
+    left: "Expression"
+    right: list["Expression"]
+
+    def __hash__(self):
+        return hash(self.left)
+    
+    def __eq__(self, value: "Expression"):
+        return self.value == value
+
+    @property
+    def line(self):
+        return self.left.line
+    
+    @property
+    def format(self):
+        return f'{self.left.format}{self.right.format}'
+    
+    @property
+    def value(self):
+        return self.left.value
+
+@dataclass
+class Parenthesized:
+    expression: "Expression"
+
+    @property
+    def line(self):
+        return self.expression.line
+    
+    @property
+    def format(self):
+        return f'({self.expression.format})'
+
+Expression = Name | BinaryOperation | Call | Item | Parenthesized
+
+@dataclass
+class Import:
+    head: Expression
+    feet: Expression=None
+
+@dataclass
+class Return:
+    value: Expression
+    
+    @property
+    def kind(self):
+        return self.value.kind
+    
+    @property
+    def format(self):
+        return f'return {self.value.format}'
+    
+
+@dataclass
+class Extern:
+    head: Expression
+
+    def __hash__(self):
+        return hash(self.head)
+
+    @property
+    def kind(self):
+        return self.head.kind
+    
+    @property
+    def name(self):
+        return self.head.name
+
+    @property
+    def module(self):
+        return self.head.module
+
+@dataclass
+class EnumDeclaration:
+    name: Name
+    members: list[Name]
+
+@dataclass
+class StructDeclaration:
+    name: Name
+    members: dict[Name, Expression]
+    methods: dict[Name, "FunctionDeclaration"]
+
+    @property
+    def line(self):
+        return self.name.line
+    
+    @property
+    def format(self):
+        return f'struct {self.name.format} {{ ... }}'
+
+@dataclass
+class Struct:
+    name: Name
+    values: list[Expression]
+
+    @property
+    def line(self):
+        return self.name.line
+
+    @property
+    def kind(self):
+        return self.name
+
+@dataclass
+class Array:
+    values: list[Expression]
+
+    @property
+    def kind(self):
+        if self.values:
+            return Item(Name('array'), Array(values=[self.values[0].kind]))
+
+        return Item(Name('array'), Array(values=[Name('any')]))
+    
+    @property
+    def format(self):
+        return f'[{", ".join(value.format for value in self.values)}]'
+
+@dataclass
+class Let:
+    name: Type
+    kind: Expression
+    value: Expression
+    
+    @property
+    def line(self):
+        return self.name.line
+    
+    @property
+    def format(self):
+        return f'let {self.name.format}: {self.kind.format} = ...'
+
+@dataclass
+class Assignment:
+    head: Expression
+    value: Expression
+    operator: Token
+
+    @property
+    def line(self):
+        return self.head.line
 
 @dataclass
 class Body:
     lines: list[Expression]
 
-@dataclass
-class Let:
-    name: Name
-    kind: Name
-    value: Expression
-
-@dataclass
-class Set:
-    name: Name
-    value: Expression
-
-class SetAdd(Set): pass
-class SetSub(Set): pass
-class SetMul(Set): pass
-class SetDiv(Set): pass
-class SetRem(Set): pass
-
-@dataclass
-class Import:
-    name: Expression
-
     @property
-    def as_path(self):
-        if type(self.name) is Dot:
-            return self.name.as_name
-        
-        return self.name
+    def line(self):
+        if len(self.lines):
+            return self.lines[0].line
 
-@dataclass
-class Return:
-    value: Expression
+        return 0
 
-@dataclass
-class ExternFunction:
-    name: Name
-    parameters: dict[Name, Name]
-    return_type: Name
+@dataclass(repr=False) # caution: enabling repr could lead to recursion
+class FunctionHead:
+    name: Type
+    kind: Expression
+    parameters: dict[Name, Expression]
+    module: "Module"=None
+    struct: "StructDeclaration"=None
 
-@dataclass
-class Function:
-    name: Name
-    return_type: Name
-    parameters: dict[Name, Name]
-    body: Body
-    owner=None
+    def __hash__(self):
+        return hash((self.name, self.signature, self.kind))
+    
+    def __repr__(self):
+        return f'FunctionHead(name={self.name!r}, kind={self.kind!r}, parameters={self.parameters!r})'
 
     @property
     def signature(self):
-        return tuple(self.parameters.values())
+        return tuple(parameter for parameter in self.parameters.values())
+
+    @property
+    def line(self):
+        return self.name.line
+    
+    @property
+    def format(self):
+        return f'fun {self.name.format}(...) {self.kind.format}'
+
+@dataclass
+class FunctionDeclaration:
+    head: FunctionHead
+    body: Body
+
+    def __hash__(self):
+        return hash(self.head)
+
+    @property
+    def line(self):
+        return self.name.line
+    
+    @property
+    def kind(self):
+        return self.head.kind
+    
+    @property
+    def name(self):
+        return self.head.name
+
+    @property
+    def module(self):
+        return self.head.module
+
+@dataclass
+class While:
+    condition: Expression
+    body: Body
+
+    @property
+    def line(self):
+        return self.condition.line
 
 @dataclass
 class If:
     condition: Expression
     body: Body
-    
-class While(If): pass
+
+    @property
+    def line(self):
+        return self.condition.line
 
 @dataclass
 class Else:
     body: Body
 
-@dataclass
-class Array:
-    items: list[Expression]
+    @property
+    def line(self):
+        return self.body.line
 
-@dataclass
-class StructDeclaration:
-    kind: Type
-    names: list[Name]
-    kinds: list[Type]
-    functions: dict[Name, dict[tuple[Name], Function]]
+Ast = Import | EnumDeclaration | StructDeclaration | FunctionDeclaration | Let
 
-@dataclass
-class EnumDeclaration:
-    kind: Type
-    names: list[Name]
-
-@dataclass
-class Struct:
-    kind: Type
-    fields: list[Expression]
-
-Ast = Function | Let | Body | Add | Call
-
-@dataclass
-class Parsing:
-    line: int=0
-
-def parse_call(parsing: Parsing, seeker: Control, name: Name) -> Call:
-    arguments = []
-
-    for token in seeker:
-        if token is Token.RightParenthesis:
-            break
-        elif token is Token.Comma:
-            continue
-        else:
-            expression = parse_expression(parsing, seeker, token, {Token.Comma, Token.RightParenthesis})
-
-            if expression:
-                arguments.append(expression)
-
-    return Call(name, arguments)
-
-def parse_array(parsing: Parsing, seeker: Control) -> Array:
-    items = []
-
-    for token in seeker:
-        if token is Token.RightBracket:
-            break
-        elif token is Token.Comma:
-            continue
-
-        expression = parse_expression(parsing, seeker, token, {Token.Comma})
-
-        if expression is not None:
-            items.append(expression)
-
-    return Array(items)
-
-def parse_struct(parsing: Parsing, seeker: Control, kind: Type) -> Struct:
-    fields = []
-
-    for token in seeker:
-        if token is Token.RightBrace:
-            break
-        elif token is Token.Comma:
-            continue
-        elif token is Token.Line:
-            parsing.line += 1
-            continue
-
-        expression = parse_expression(parsing, seeker, token)
-
-        if expression is not None:
-            fields.append(expression)
-
-    return Struct(kind, fields)
-
-def parse_parenthesized_expression(parsing: Parsing, seeker: Control, value: Expression, ignore=set()):
-    expression = parse_expression(parsing, seeker, value, ignore | {Token.RightParenthesis})
-
-    if (token := seeker.take()) is not Token.RightParenthesis:
-        raise SyntaxError(f"expected ')'. found {token}")
+class Parser:
+    def __init__(self, source: Source, filename="main", line=1):
+        self.source = source
+        self.filename = filename
+        self.line = line
     
-    return expression
+    def __iter__(self):
+        return self.parse()
 
-def parse_expression(parsing: Parsing, seeker: Control, value: Expression, ignore=set()) -> Name:
-    if value is Token.LeftBracket:
-        return parse_expression(parsing, seeker, parse_array(parsing, seeker))
-    elif value is Token.LeftParenthesis:
-        return parse_expression(parsing, seeker, parse_parenthesized_expression(parsing, seeker, seeker.take(), ignore))
-    elif value is Token.Not:
-        return parse_expression(parsing, seeker, Not(parse_expression(parsing, seeker, seeker.take(), ignore)), ignore)
+    def parse_call(self, head: Expression):
+        arguments = []
 
-    token = seeker.take()
+        for token in self.source:
+            if token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed function call '{head}'. at line {head.line}")
+            elif token is Token.RightParenthesis:
+                break
 
-    if token in ignore:
-        pass
-
-    elif token is Token.LeftParenthesis:
-        return parse_expression(parsing, seeker, parse_call(parsing, seeker, value))
-    elif type(value) is Name and token is Token.At:
-        seeker.drop()
-        return parse_expression(parsing, seeker, parse_type(parsing, seeker, value))
-    
-    elif type(value) in (Type, Name) and token is Token.LeftBrace:
-        return parse_expression(parsing, seeker, parse_struct(parsing, seeker, value))
-    
-    elif token is Token.Plus:
-        return parse_expression(parsing, seeker, Add(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
-    elif token is Token.Minus:
-        return parse_expression(parsing, seeker, Sub(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
-    elif token is Token.Star:
-        return parse_expression(parsing, seeker, Mul(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
-    elif token is Token.Slash:
-        return parse_expression(parsing, seeker, Div(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
-    elif token is Token.Percent:
-        return parse_expression(parsing, seeker, Rem(value, parse_expression(parsing, seeker, seeker.take(), {Token.EqualEqual})), ignore)
-    
-    elif token is Token.NotEqual:
-        return NotEqual(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
-    elif token is Token.EqualEqual:
-        return Equal(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
-    elif token is Token.LessThan:
-        return LessThan(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
-    elif token is Token.GreaterThan:
-        return GreaterThan(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
-    elif token is Token.LessThanEqual:
-        return LessThanEqual(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
-    elif token is Token.GreaterThanEqual:
-        return GreaterThanEqual(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
-    
-    elif token is Token.Dot:
-        return parse_expression(parsing, seeker, Dot(value, parse_expression(parsing, seeker, seeker.take(), {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.EqualEqual, Token.LeftParenthesis})), ignore)
-    
-    elif type(value) in (Name, Dot) and token is Token.LeftBracket:
-        item = Item(value, parse_expression(parsing, seeker, seeker.take(), ignore=ignore))
-
-        if (token := seeker.take()) is not Token.RightBracket:
-            raise SyntaxError(f"expected ']'. found {token}")
-
-        return parse_expression(parsing, seeker, item, ignore)
-
-    seeker.drop()
-
-    return value
-
-def parse_else(parsing: Parsing, seeker: Control) -> Else:
-    return Else(parse_body(parsing, seeker))
-
-def parse_if(parsing: Parsing, seeker: Control) -> If:
-    return If(parse_expression(parsing, seeker, seeker.take(), {Token.LeftBrace}), parse_body(parsing, seeker))
-
-def parse_while(parsing: Parsing, seeker: Control) -> While:
-    return While(parse_expression(parsing, seeker, seeker.take(), {Token.LeftBrace}), parse_body(parsing, seeker))
-
-def parse_return(parsing: Parsing, seeker: Control) -> Return:
-    return Return(parse_expression(parsing, seeker, seeker.take()))
-
-def parse_body(parsing: Parsing, seeker: Control) -> Body:
-    if (token := seeker.take()) is not Token.LeftBrace:
-        raise SyntaxError(f"expecting '{{', found {token}. at {parsing.line}")
-    
-    lines = []
-
-    for token in seeker:
-        if token is Token.RightBrace:
-            break
-        elif token is Token.Line:
-            parsing.line += 1
-            continue
-
-        if token is Keyword.Let:
-            lines.append(parse_let(parsing, seeker, seeker.take()))
-        elif token is Keyword.If:
-            lines.append(parse_if(parsing, seeker))
-        elif token is Keyword.Else:
-            lines.append(parse_else(parsing, seeker))
-        elif token is Keyword.While:
-            lines.append(parse_while(parsing, seeker))
-        elif token is Keyword.Return:
-            lines.append(parse_return(parsing, seeker))
-        
-        else:
-            name = parse_expression(parsing, seeker, token)
-            token = seeker.take()
-
-            if token is Token.Equal:
-                lines.append(Set(name, parse_expression(parsing, seeker, seeker.take())))
-            elif token is Token.PlusEqual:
-                lines.append(SetAdd(name, parse_expression(parsing, seeker, seeker.take())))
-            elif token is Token.MinusEqual:
-                lines.append(SetSub(name, parse_expression(parsing, seeker, seeker.take())))
-            elif token is Token.StarEqual:
-                lines.append(SetMul(name, parse_expression(parsing, seeker, seeker.take())))
-            elif token is Token.SlashEqual:
-                lines.append(SetDiv(name, parse_expression(parsing, seeker, seeker.take())))
-            elif token is Token.PercentEqual:
-                lines.append(SetRem(name, parse_expression(parsing, seeker, seeker.take())))
-            else:
-                seeker.drop()
-
-                expression = parse_expression(parsing, seeker, name)
-
-                if expression:
-                    lines.append(expression)
-    
-    return Body(lines)
-
-def parse_type(parsing: Parsing, seeker: Control, name: Name) -> Type:
-    if type(name) is not Name:
-        raise SyntaxError(f"expecting Name, found {name}. at line {parsing.line}")
-    
-    token = seeker.take()
-
-    if token is Token.At:
-        subname = seeker.take()
-
-        if type(subname) is Name:
-            subtype = parse_type(parsing, seeker, subname)
-        else:
-            raise SyntaxError
-
-        return Type(name, subtype)
-    else:
-        seeker.drop()
-    
-    return Type(name)
-
-def parse_let(parsing: Parsing, seeker: Control, name: Name) -> Let:
-    if (took := seeker.take()) is not Token.Colon:
-        raise SyntaxError(f"expecting ':' after let {name}, found {took}. at line {parsing.line}")
-    
-    kind = parse_type(parsing, seeker, seeker.take())
-
-    if (token := seeker.take()) is not Token.Equal:
-        raise SyntaxError(f"expecting '=' found {token}. at {name} variable declaration")
-
-    return Let(name, kind, parse_expression(parsing, seeker, seeker.take()))
-
-def parse_extern_function(parsing: Parsing, seeker: Control, name: Name) -> Function:
-    if seeker.take() is not Token.LeftParenthesis:
-        raise SyntaxError(f"expecting '('. at function {name} head")
-    
-    parameters = {}
-
-    for token in seeker:
-        if token is Token.RightParenthesis:
-            break
-        elif token is Token.Comma:
-            continue
-        
-        if type(token) is Name:
-            if (took := seeker.take()) is not Token.Colon:
-                raise SyntaxError(f"expecting ':' after function parameter {token}. found {took}")
-
-            parameter_type = parse_type(parsing, seeker, seeker.take())
-            parameters[token] = parameter_type
-        else:
-            raise SyntaxError(f"expecting ',' or ')'. at {name} head")
-    
-    return_type = parse_type(parsing, seeker, seeker.take())
-
-    return ExternFunction(name, parameters, return_type)
-
-def parse_import(parsing: Parsing, seeker: Control) -> Import:
-    return Import(parse_expression(parsing, seeker, seeker.take()))
-
-def parse_function(parsing: Parsing, seeker: Control, name: Name) -> Function:
-    if seeker.take() is not Token.LeftParenthesis:
-        raise SyntaxError(f"expecting '('. at function {name} head")
-    
-    parameters = {}
-
-    for token in seeker:
-        if token is Token.RightParenthesis:
-            break
-        elif token is Token.Comma:
-            continue
-        
-        if type(token) is Name:
-            if (took := seeker.take()) is not Token.Colon:
-                raise SyntaxError(f"expecting ':' after function parameter {token}. found {took}")
-
-            parameter_type = parse_type(parsing, seeker, seeker.take())
-            parameters[token] = parameter_type
-
-            if token == parameter_type.name:
-                raise NameError(f"parameter names must not be equal to type names. '{token}: {token}''. at line {parsing.line}")
-        else:
-            raise SyntaxError(f"expecting ',' or ')'. at {name} head")
-    
-    return_type = parse_type(parsing, seeker, seeker.take())
-
-    return Function(name, return_type, parameters, parse_body(parsing, seeker))
-
-def parse_struct_declaration(parsing: Parsing, seeker: Control, kind: Type) -> StructDeclaration:
-    if seeker.take() is not Token.LeftBrace:
-        raise SyntaxError
-    
-    names = []
-    kinds = []
-    functions = dict()
-
-    for token in seeker:
-        if token is Token.Line:
-            parsing.line += 1
-            continue
-
-        if token is Token.RightBrace:
-            break
-
-        elif type(token) is Name:
-            names.append(token)
-
-            if (took := seeker.take()) is not Token.Colon:
-                raise SyntaxError(f"expecting ':' after struct member {token}. found {took}")
+            argument = self.parse_expression(token, {Token.Comma, Token.RightParenthesis})
             
-            kinds.append(parse_type(parsing, seeker, seeker.take()))
-        
-        elif token is Keyword.Fun:
-            function = parse_function(parsing, seeker, seeker.take())
+            if argument:
+                arguments.append(argument)
 
-            functions.setdefault(function.name, {})
-            functions[function.name][function.signature] = function
+            token = self.source.look()
 
-            names.append(function.name)
-            kinds.append(Type(Name('function')))
-        else:
-            raise SyntaxError(f'{token} is not a Name')
-
-    return StructDeclaration(kind, names, kinds, functions)
-
-def parse_enum_declaration(parsing: Parsing, seeker: Control, kind: Type):
-    if seeker.take() is not Token.LeftBrace:
-        raise SyntaxError
-        
-    names = []
-
-    for token in seeker:
-        if token is Token.Line:
-            parsing.line += 1
-            continue
-        elif token is Token.Comma:
-            continue
-
-        if token is Token.RightBrace:
-            break
-        elif type(token) is Name:
-            names.append(token)
-
-    return EnumDeclaration(kind, names)
-
-def parse(seeker: Control):
-    parsing = Parsing()
-
-    for token in seeker:
-        if token is Token.EndOfFile:
-            break
-        elif token is Token.Line:
-            parsing.line += 1
-            continue
-
-        if token is Keyword.Import:
-            yield parse_import(parsing, seeker)
-        elif token is Keyword.Fun:
-            yield parse_function(parsing, seeker, seeker.take())
-        
-        elif token is Keyword.Extern:
-            if seeker.take() is Keyword.Fun:
-                yield parse_extern_function(parsing, seeker, seeker.take())
+            if token is Token.Comma:
+                continue
+            elif token is Token.RightParenthesis:
+                break
+            elif token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed function call '{head}'. at line {head.line}")
             else:
-                raise NotImplementedError(f"'extern' without 'fun' is not implemented. at line {parsing.line}")
-        
-        elif token is Keyword.Struct:
-            yield parse_struct_declaration(parsing, seeker, parse_type(parsing, seeker, seeker.take()))
-        
-        elif token is Keyword.Enum:
-            yield parse_enum_declaration(parsing, seeker, parse_type(parsing, seeker, seeker.take()))
-        
-        elif token is Keyword.Let:
-            yield parse_let(parsing, seeker, seeker.take())
+                raise SyntaxError(f"expecting ',' or ')' after function call argument {len(arguments)} for '{head.format}'. found {token}. at line {head.line}")
 
-        elif type(token) is Comment:
-            yield token
-        else:
-            raise NotImplementedError(token)
+        return Call(head, arguments)
+    
+    def parse_array(self, left_bracket: Token):
+        values = []
 
-    return
+        for token in self.source:
+            if token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed array literal '{left_bracket}'. at line {left_bracket.line}")
+            elif token is Token.RightBracket:
+                break
+
+            value = self.parse_expression(token, {Token.Comma, Token.RightBracket})
+            
+            if value:
+                values.append(value)
+
+            token = self.source.look()
+
+            if token is Token.Comma:
+                continue
+            elif token is Token.RightBracket:
+                break
+            elif token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed array literal '{left_bracket}'. at line {left_bracket.line}")
+            else:
+                raise SyntaxError(f"expecting ',' or ')' after function call argument. at line {token.line}")
+
+        return Array(values)
+
+    def parse_expression(self, expression: Expression, ignore=set()):
+        if expression is Token.LeftBracket:
+            return self.parse_expression(self.parse_array(expression), ignore)
+        elif type(expression) is Token:
+            if expression is Token.LeftParenthesis:
+                token = self.source.look()
+                inner_expression = self.parse_expression(token, ignore | {Token.RightParenthesis})
+                token = self.source.look()
+
+                if token is not Token.RightParenthesis:
+                    raise SyntaxError(f"unclosed parenthesized expression. at line {expression.line} in '{self.filename}'")
+                
+                return self.parse_expression(Parenthesized(inner_expression), ignore)
+
+            raise SyntaxError(f"unexpected token {expression}. at line {expression.line} in '{self.filename}'")
+        
+        token = self.source.look()
+
+        BINARYOPERATION_TOKENS = {Token.Plus, Token.Minus, Token.Star, Token.Slash, Token.Percent, Token.Ampersand, Token.VerticalBar, Token.Caret, Token.LessThan, Token.GreaterThan, Token.NotEqual, Token.EqualEqual, Token.LessThanEqual, Token.GreaterThanEqual}
+
+        if type(token) is not Token:
+            pass
+        elif token in ignore:
+            pass
+        elif token in BINARYOPERATION_TOKENS:
+            return BinaryOperation(expression, token, self.parse_expression(self.source.look(), ignore))
+        elif token is Token.Dot:
+            return self.parse_expression(Dot(expression, self.parse_expression(self.source.look(), ignore | {Token.LeftParenthesis} | BINARYOPERATION_TOKENS)), ignore)
+        elif token is Token.LeftParenthesis and (type(expression) is Name or type(expression) is Dot):
+            return self.parse_expression(self.parse_call(expression), ignore)
+        elif token is Token.LeftBrace:
+            return self.parse_expression(self.parse_struct(expression), ignore)
+        elif type(expression) is Name and token is Token.LeftBracket:
+            return self.parse_expression(Item(expression, self.parse_array(token)), ignore)
+
+        self.source.unlook()
+
+        return expression
+    
+    def parse_import(self):
+        expression = self.parse_expression(self.source.look())
+
+        if type(expression) is not Dot and type(expression) is not Name:
+            raise SyntaxError(f"import expects a module name, found {expression}. at line {expression.line} in '{self.filename}'")
+
+        return Import(expression)
+    
+    def parse_return(self):
+        return Return(self.parse_expression(self.source.look()))
+    
+    def parse_enum_declaration(self):
+        name = self.source.look()
+
+        if type(name) is not Name:
+            raise SyntaxError(f"enum expects a name, found {name}. at line {name.line} in '{self.filename}'")
+        
+        if (token := self.source.look()) is not Token.LeftBrace:
+            raise SyntaxError(f"enum expects '{{', found {token}. at line {token.line} in '{self.filename}'")
+        
+        members = []
+
+        for token in self.source:
+            if token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed enum body '{name}'. at line {name.line} in '{self.filename}'")
+            elif token is Token.RightBrace:
+                break
+
+            argument = self.parse_expression(token, {Token.Comma, Token.RightBrace})
+            
+            if argument:
+                members.append(argument)
+
+        return EnumDeclaration(name, members)
+    
+    def parse_struct_declaration(self):
+        name = self.parse_expression(self.source.look(), {Token.LeftBrace})
+
+        if type(name) is not Item and type(name) is not Name:
+            raise SyntaxError(f"struct expects a name, found {name}. at line {name.line} in '{self.filename}'")
+        
+        if (token := self.source.look()) is not Token.LeftBrace:
+            raise SyntaxError(f"enum expects '{{', found {token}. at line {token.line} in '{self.filename}'")
+
+        members = {}
+        methods = {}
+
+        for token in self.source:
+            if token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed enum body '{name}'. at line {name.line} in '{self.filename}'")
+            elif token is Token.RightBrace:
+                break
+
+            if token is Keyword.Fun:
+                function = self.parse_function_declaration()
+                signatures = methods.setdefault(function.name, {})
+                signatures[function.head.signature] = function
+                continue
+
+            member_name = token
+
+            if type(member_name) is not Name:
+                raise SyntaxError(f"struct {name} expects a member name, found {member_name}. at line {member_name.line} in '{self.filename}'")
+            
+            if (token := self.source.look()) is not Token.Colon:
+                raise SyntaxError(f"struct {name} expects a ':' after member name {member_name}, found {token}. at line {member_name.line} in '{self.filename}'")
+        
+            member_kind = self.parse_expression(self.source.look(), {Token.Comma, Token.RightBrace})
+            
+            if type(member_kind) is not Dot and type(member_kind) is not Name:
+                raise SyntaxError(f"struct member {member_name} must have a valid type, found {member_kind}. at {member_kind.line} in '{self.filename}'")
+            
+            members[member_name] = Type(member_kind)
+
+        return StructDeclaration(name, members, methods)
+    
+    def parse_struct(self, name: Name):
+        values = []
+
+        for token in self.source:
+            if token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed enum body '{name}'. at line {name.line} in '{self.filename}'")
+            elif token is Token.RightBrace:
+                break
+
+            value = self.parse_expression(token, {Token.Comma, Token.RightBrace})
+            
+            if value:
+                values.append(value)
+
+            token = self.source.look()
+
+            if token is Token.Comma:
+                continue
+            elif token is Token.RightBrace:
+                break
+            elif token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed struct literal '{name}'. at line {name.line} in '{self.filename}'")
+            else:
+                raise SyntaxError(f"expecting ',' or '}}' after struct literal argument {value}. at line {value.line} in '{self.filename}'")
+        
+        return Struct(name, values)
+    
+    def parse_body(self):
+        if (token := self.source.look()) is not Token.LeftBrace:
+            raise SyntaxError(f"bodies must starts with '{{', found {token}. at line {token.line} in '{self.filename}'")
+        
+        left_brace = token
+        lines = []
+
+        for token in self.source:
+            if token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed body. at line {left_brace.line} in '{self.filename}'")
+            elif token is Token.RightBrace:
+                break
+
+            if token is Keyword.Import:
+                lines.append(self.parse_import())
+            elif token is Keyword.Enum:
+                lines.append(self.parse_enum_declaration())
+            elif token is Keyword.Struct:
+                lines.append(self.parse_struct_declaration())
+            elif token is Keyword.Fun:
+                lines.append(self.parse_function_declaration())
+            elif token is Keyword.Let:
+                lines.append(self.parse_let())
+            elif token is Keyword.While:
+                lines.append(self.parse_while())
+            elif token is Keyword.If:
+                lines.append(self.parse_if())
+            elif token is Keyword.Else:
+                lines.append(self.parse_else())
+            elif token is Keyword.Return:
+                lines.append(self.parse_return())
+            else:
+                parsed_expression = self.parse_expression(token, {Token.Equal, Token.PlusEqual, Token.MinusEqual, Token.StarEqual, Token.SlashEqual, Token.PercentEqual, Token.AmpersandEqual, Token.CaretEqual, Token.VerticalBarEqual})
+                token = self.source.look()
+
+                if token in {Token.Equal, Token.PlusEqual, Token.MinusEqual, Token.StarEqual, Token.SlashEqual, Token.PercentEqual, Token.AmpersandEqual, Token.CaretEqual, Token.VerticalBarEqual}:
+                    lines.append(self.parse_assignment(parsed_expression, token))
+                else:
+                    self.source.unlook()
+                    lines.append(parsed_expression)
+        
+        return Body(lines)
+
+    def parse_function_head(self):
+        name = self.source.look()
+
+        if type(name) is not Name:
+            raise SyntaxError(f"fun expects a name, found {name}. at line {name.line} in '{self.filename}'")
+        
+        if (token := self.source.look()) is not Token.LeftParenthesis:
+            raise SyntaxError(f"function head {name} expects '(', found {token}. at line {token.line} in '{self.filename}'")
+
+        parameters = {}
+
+        for token in self.source:
+            if token is Token.RightParenthesis:
+                break
+
+            parameter_name = token
+
+            if type(parameter_name) is not Name:
+                raise SyntaxError(f"fun {name} expects a parameter name, found {parameter_name}. at line {parameter_name.line} in '{self.filename}'")
+            
+            if (token := self.source.look()) is not Token.Colon:
+                raise SyntaxError(f"fun {name} expects a ':' after parameter name {parameter_name}, found {token}. at line {parameter_name.line} in '{self.filename}'")
+            
+            parameter_kind = self.parse_expression(self.source.look(), {Token.Comma, Token.RightBrace})
+            
+            if type(parameter_kind) is not Dot and type(parameter_kind) is not Item and type(parameter_kind) is not Name:
+                raise SyntaxError(f"struct member {parameter_kind} must have a valid type, found {parameter_kind}. at {parameter_kind.line} in '{self.filename}'")
+            
+            parameters[parameter_name] = Type(parameter_kind)
+
+            token = self.source.look()
+
+            if token is Token.Comma:
+                continue
+            elif token is Token.RightParenthesis:
+                break
+            elif token is Token.EndOfFile:
+                raise SyntaxError(f"unclosed function declaration head '{name}'. at line {name.line} in '{self.filename}'")
+            else:
+                raise SyntaxError(f"expecting ',' or ')' after function declaration parameter. at line {token.line} in '{self.filename}'")
+        
+        kind = self.parse_expression(self.source.look(), {Token.LeftBrace})
+
+        if type(kind) is not Dot and type(kind) is not Name:
+            raise SyntaxError(f"invalid function return type, found {kind}. at {name.line} in '{self.filename}'")
+
+        return FunctionHead(name, Type(kind), parameters)
+
+    def parse_function_declaration(self):
+        return FunctionDeclaration(self.parse_function_head(), self.parse_body())
+    
+    def parse_extern(self):
+        token = self.source.look()
+
+        if token is not Keyword.Fun:
+            raise NotImplementedError(f"extern without fun is not implemented. in '{self.filename}'")
+
+        return Extern(self.parse_function_head())
+
+    def parse_let(self):
+        name = self.source.look()
+
+        if type(name) is not Name:
+            raise SyntaxError(f"let expects a variable name, found '{name.format}'. at line {name.line} in '{self.filename}'")
+
+        if (token := self.source.look()) is not Token.Colon:
+            raise SyntaxError(f"let '{name.format}' expects a ':' after variable name, found {token}. at line {name.line} in '{self.filename}'")
+        
+        kind = self.parse_expression(self.source.look())
+        
+        if type(kind) is not Dot and type(kind) is not Item and type(kind) is not Name:
+            raise SyntaxError(f"let {name} expects a variable type. found {kind}. at line {name.line} in '{self.filename}'")
+        
+        if (token := self.source.look()) is not Token.Equal:
+            raise SyntaxError(f"let {name} expects a '=' after head, found {token}. at line {name.line} in '{self.filename}'")
+        
+        return Let(name, Type(kind), self.parse_expression(self.source.look()))
+    
+    def parse_assignment(self, head: Expression, operator: Token):
+        if type(head) is not Dot and type(head) is not Item and type(head) is not Name:
+            raise SyntaxError(f"assignment expects a name or item found {head}. at line {head.line} in '{self.filename}'")
+        
+        return Assignment(head, self.parse_expression(self.source.look()), operator)
+    
+    def parse_while(self):
+        return While(self.parse_expression(self.source.look(), {Token.LeftBrace}), self.parse_body())
+
+    def parse_if(self):
+        return If(self.parse_expression(self.source.look(), {Token.LeftBrace}), self.parse_body())
+    
+    def parse_else(self):
+        return Else(self.parse_body())
+
+    def parse(self):
+        for token in self.source:
+            if token is Token.EndOfFile:
+                break
+
+            if token is Keyword.Import:
+                yield self.parse_import()
+            elif token is Keyword.Enum:
+                yield self.parse_enum_declaration()
+            elif token is Keyword.Struct:
+                yield self.parse_struct_declaration()
+            elif token is Keyword.Extern:
+                yield self.parse_extern()
+            elif token is Keyword.Fun:
+                yield self.parse_function_declaration()
+            elif token is Keyword.Let:
+                yield self.parse_let()
+            elif token is Keyword.While:
+                yield self.parse_while()
+            elif token is Keyword.If:
+                yield self.parse_if()
+            elif token is Keyword.Else:
+                yield self.parse_else()
+            elif token is Keyword.Return:
+                yield self.parse_return()
+            elif type(token) is Name:
+                head = self.parse_expression(token)
+                next_token = self.source.look()
+
+                if next_token is Token.Equal:
+                    yield self.parse_assignment(head, next_token)
+                else:
+                    self.source.unlook()
+                    yield head
+            else:
+                yield self.parse_expression(token)
+        
+        return

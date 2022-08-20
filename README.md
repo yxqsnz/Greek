@@ -4,6 +4,8 @@ Greek is a minimalistic compiled programming language. intended to be easy to le
 
 ![Logo](logo_labeled.png)
 
+## BE AWARE THAT GREEK IS STILL IN ITS EARLY DEVELOPMENT (EXPERIMENTAL)
+
 ## Install
 ```
 $ cd Greek
@@ -19,18 +21,19 @@ $ pip install .
 - [X] Parser
     - [X] Variable declarations
     - [X] Function calls
-    - [ ] Enums
+    - [X] Enums
     - [X] Structs
     - [X] Loops
         - [X] While
         - [ ] For
     - [X] Conditionals
         - [X] If
-        - [ ] Else
+        - [x] Else
         - [ ] Else if
     - [X] Modules
         - [X] Namespaces
-- [ ] Compiler
+    - [ ] Generics
+- [X] Compiler
     - [X] C Transpiler
 
 ---

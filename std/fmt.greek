@@ -1,6 +1,4 @@
-extern fun malloc(size: int) voidptr
-extern fun memcpy(dest: str, src: str, count: int) voidptr
-extern fun free(buffer: str) void
+import std.mem
 
 fun len(source: str) int {
     let i: int = 0
@@ -34,10 +32,10 @@ fun cat(left: str, right: str) str {
     let right_length: int = len(right)
     let total_length: int = left_length + right_length
     
-    let buffer: str = malloc(total_length + 1)
+    let buffer: ptr = std.mem.alloc(total_length + 1)
 
-    memcpy(buffer, left, left_length)
-    memcpy(buffer + left_length, right, right_length)
+    std.mem.copy(buffer, left, left_length)
+    std.mem.copy(buffer + left_length, right, right_length)
 
     buffer[total_length] = 0
 
@@ -71,7 +69,7 @@ fun slice(source: str, start: int, stop: int) str {
         return slice(source, stop, start)
     }
 
-    let destination: str = malloc((stop - start) + 1)
+    let destination: str = std.mem.alloc((stop - start) + 1)
     let i: int = start
     let j: int = 0
 
@@ -88,11 +86,13 @@ fun slice(source: str, start: int, stop: int) str {
 
 fun to_decimal(integer: int) str {
     let integer_length: int = len(integer)
-    let buffer: str = malloc(integer_length + 1)
+    let buffer: str = std.mem.alloc(integer_length + 1)
 
     if integer == 0 {
         buffer[0] = 48
         buffer[1] = 0
+
+        return buffer
     }
 
     let i: int = integer_length

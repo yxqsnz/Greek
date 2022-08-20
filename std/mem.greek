@@ -1,0 +1,15 @@
+extern fun malloc(size: int) ptr
+extern fun free(pointer: ptr) void
+extern fun memcpy(dest: str, src: str, count: int) ptr
+
+fun alloc(size: int) ptr {
+    return malloc(size)
+}
+
+fun dealloc(pointer: ptr) void {
+    return free(pointer)
+}
+
+fun copy(destination: ptr, source: str, count: int) ptr {
+    return memcpy(destination, source, count)
+}
